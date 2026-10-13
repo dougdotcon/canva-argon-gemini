@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAMESIS NEXUS — THE ARCHITECTURE OF REALITY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-graphite: #0a0b0e;
+            --titanium: #8c939e;
+            --mineral-white: #f2f0ea;
+            --oxidized-copper: #b86b43;
+            --amber-data: #f59e0b;
+            --crimson-anomaly: #e11d48;
+            --emerald-valid: #10b981;
+            --deep-violet: #7c3aed;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-graphite);
+            color: var(--mineral-white);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+        }
+
+        /* Architectural micro-grid background */
+        .bg-arch-grid {
+            background-color: var(--bg-graphite);
+            background-image: 
+                linear-gradient(to right, rgba(242, 240, 234, 0.025) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(242, 240, 234, 0.025) 1px, transparent 1px),
+                linear-gradient(to right, rgba(242, 240, 234, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(242, 240, 234, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+        }
+
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Custom technical panel styling */
+        .tech-panel {
+            background: rgba(13, 15, 19, 0.84);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(140, 147, 158, 0.25);
+            position: relative;
+        }
+
+        .tech-panel::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px;
+            width: 6px; height: 6px;
+            border-top: 1.5px solid var(--mineral-white);
+            border-left: 1.5px solid var(--mineral-white);
+        }
+
+        .tech-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; right: -1px;
+            width: 6px; height: 6px;
+            border-bottom: 1.5px solid var(--mineral-white);
+            border-right: 1.5px solid var(--mineral-white);
+        }
+
+        /* Callout labels projected in 3D space */
+        .callout-node {
+            position: absolute;
+            pointer-events: auto;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .callout-box {
+            background: rgba(10, 11, 14, 0.92);
+            border: 1px solid rgba(140, 147, 158, 0.4);
+            padding: 5px 9px;
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        }
+
+        .callout-node:hover .callout-box {
+            border-color: var(--mineral-white);
+            background: rgba(20, 23, 30, 0.98);
+        }
+
+        /* Custom Range Slider */
+        input[type=range].tech-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(140, 147, 158, 0.2);
+            height: 3px;
+            outline: none;
+        }
+        input[type=range].tech-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--mineral-white);
+            border: 2px solid var(--bg-graphite);
+            cursor: pointer;
+        }
+
+        /* Ruler ticks */
+        .ruler-x {
+            background-image: repeating-linear-gradient(to right, rgba(140,147,158,0.4) 0, rgba(140,147,158,0.4) 1px, transparent 1px, transparent 10px);
+        }
+        .ruler-y {
+            background-image: repeating-linear-gradient(to bottom, rgba(140,147,158,0.4) 0, rgba(140,147,158,0.4) 1px, transparent 1px, transparent 10px);
+        }
+
+        .layer-btn.active {
+            background: rgba(242, 240, 234, 0.14);
+            border-color: var(--mineral-white);
+            color: var(--mineral-white);
+        }
+
+        /* =================================================================== */
+        /* ENTERGALACTIC CINEMATIC SHADER & GRAPHIC NOVEL OVERLAYS             */
+        /* =================================================================== */
+        #entergalactic-fx {
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            mix-blend-mode: screen;
+        }
+        body.cine-active #entergalactic-fx {
+            opacity: 1;
+        }
+
+        /* Halftone Comic/Painterly Dot Matrix */
+        .halftone-overlay {
+            background-image: radial-gradient(rgba(245, 158, 11, 0.16) 1px, transparent 1px),
+                              radial-gradient(rgba(124, 58, 237, 0.18) 1px, transparent 1px);
+            background-size: 6px 6px;
+            background-position: 0 0, 3px 3px;
+        }
+
+        /* Speed-line radial zoom vignette during camera warp transitions */
+        #speedlines-overlay {
+            background: repeating-conic-gradient(
+                from 0deg,
+                transparent 0deg 4deg,
+                rgba(242, 240, 234, 0.04) 4deg 4.6deg,
+                transparent 4.6deg 9deg,
+                rgba(245, 158, 11, 0.05) 9deg 9.4deg
+            );
+            mask-image: radial-gradient(circle at center, transparent 38%, black 92%);
+            -webkit-mask-image: radial-gradient(circle at center, transparent 38%, black 92%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        /* Chromatic Aberration & Bold Graphic Stroke Pulse on 3D Canvas */
+        body.cine-active #webgl-container canvas {
+            filter: contrast(1.22) saturate(1.38) drop-shadow(-2.5px 0px 0px rgba(225, 29, 72, 0.55)) drop-shadow(2.5px 0px 0px rgba(124, 58, 237, 0.65));
+        }
+
+        /* Cinematic Letterbox Bars */
+        .cine-bar-top, .cine-bar-bottom {
+            position: absolute;
+            left: 0; right: 0;
+            height: 0px;
+            background: #050507;
+            z-index: 45;
+            transition: height 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+            overflow: hidden;
+        }
+        .cine-bar-top { top: 0; border-bottom: 1px solid rgba(245, 158, 11, 0.35); }
+        .cine-bar-bottom { bottom: 0; border-top: 1px solid rgba(124, 58, 237, 0.35); }
+        body.cine-active .cine-bar-top,
+        body.cine-active .cine-bar-bottom {
+            height: 64px;
+        }
+
+        /* Bold Entergalactic Chapter Typography Stamp */
+        .chapter-stamp {
+            text-shadow: 4px 4px 0px #7c3aed, -2px -2px 0px #e11d48;
+            transform: skewX(-6deg);
+        }
+
+        /* Hide side UI clutter during cinema mode if desired, or keep dimmed */
+        body.cine-active .side-ui-panel {
+            opacity: 0.18;
+            transition: opacity 0.4s ease;
+        }
+        body.cine-active .side-ui-panel:hover {
+            opacity: 0.95;
+        }
+    </style>
+</head>
+<body class="bg-arch-grid flex items-center justify-center">
+
+    <!-- OUTER ARCHITECTURAL PLATE FRAME (Enforces 16:9 Engineering Sheet Aesthetics) -->
+    <div id="plate-container" class="relative w-full h-full max-w-[1920px] max-h-[1080px] flex flex-col justify-between p-4 lg:p-6 overflow-hidden border border-[#8c939e]/20">
+        
+        <!-- CINEMATIC LETTERBOX BARS (Active during 30s Video Sequence) -->
+        <div class="cine-bar-top flex items-center justify-between px-8 pointer-events-none">
+            <div class="flex items-center gap-3">
+                <span class="w-2.5 h-2.5 bg-[#e11d48] rounded-full animate-ping"></span>
+                <span class="text-[11px] tracking-[0.25em] font-semibold text-[#f2f0ea]">ENTERGALACTIC // 30S LAYER-BY-LAYER CINEMATIC CUT</span>
+                <span class="text-[10px] px-2 py-0.5 bg-[#7c3aed]/30 border border-[#7c3aed] text-[#f2f0ea]">12 FPS STEPPED STYLIZATION</span>
+            </div>
+            <div class="flex items-center gap-6 text-[11px] tracking-[0.18em]">
+                <span id="cine-act-code" class="text-[#f59e0b] font-semibold">ACT I // INFRASTRUCTURE</span>
+                <span id="cine-timecode" class="font-mono text-sm font-bold text-[#f2f0ea] bg-[#14171f] px-2.5 py-0.5 border border-[#8c939e]/40">00:00.00 / 00:30.00</span>
+            </div>
+        </div>
+
+        <div class="cine-bar-bottom flex flex-col justify-center px-8 pointer-events-auto">
+            <!-- 30s Timeline Scrubber & Chapter Markers -->
+            <div class="w-full flex items-center gap-4">
+                <button id="btn-cine-stop" class="px-3 py-1 bg-[#e11d48]/20 border border-[#e11d48] text-[#e11d48] text-[10px] font-bold tracking-widest hover:bg-[#e11d48] hover:text-white transition">
+                    ■ EXIT VIDEO
+                </button>
+                <button id="btn-cine-audio" class="px-3 py-1 bg-[#7c3aed]/20 border border-[#7c3aed] text-[#f2f0ea] text-[10px] font-bold tracking-widest hover:bg-[#7c3aed]/40 transition">
+                    ♫ SYNTH AUDIO: ON
+                </button>
+                <div class="flex-1 relative h-3 bg-[#14171f] border border-[#8c939e]/40 cursor-pointer" id="cine-scrubber">
+                    <div id="cine-progress-bar" class="h-full bg-gradient-to-r from-[#7c3aed] via-[#f59e0b] to-[#e11d48] w-0"></div>
+                    <!-- 6 Chapter Ticks (Every 5 Seconds) -->
+                    <div class="absolute inset-0 flex justify-between pointer-events-none px-[16.6%]">
+                        <span class="w-[1px] h-full bg-[#f2f0ea]/40"></span>
+                        <span class="w-[1px] h-full bg-[#f2f0ea]/40"></span>
+                        <span class="w-[1px] h-full bg-[#f2f0ea]/40"></span>
+                        <span class="w-[1px] h-full bg-[#f2f0ea]/40"></span>
+                        <span class="w-[1px] h-full bg-[#f2f0ea]/40"></span>
+                    </div>
+                </div>
+                <span class="text-[10px] tracking-[0.15em] text-[#8c939e] hidden md:inline">CLICK TIMELINE TO SCRUB</span>
+            </div>
+        </div>
+
+        <!-- ENTERGALACTIC GRAPHIC SHADER & CHAPTER CARD OVERLAY -->
+        <div id="entergalactic-fx" class="absolute inset-0 z-35">
+            <div class="absolute inset-0 halftone-overlay"></div>
+            <div id="speedlines-overlay" class="absolute inset-0"></div>
+            <!-- Bold Graphic Chapter Title Card (Bottom-Left / Center-Left) -->
+            <div id="cine-title-card" class="absolute left-8 lg:left-16 bottom-20 z-40 transition-all duration-300 transform">
+                <div class="inline-block px-2.5 py-0.5 bg-[#f59e0b] text-[#0a0b0e] font-bold text-[10px] tracking-[0.22em] uppercase mb-1.5" id="cine-card-tag">
+                    LAYER 01 // -16.0M ELEVATION
+                </div>
+                <h2 id="cine-card-title" class="font-display text-3xl lg:text-5xl font-bold text-[#f2f0ea] tracking-wider uppercase chapter-stamp leading-none">
+                    ORBITAL OBSERVATORY RIGS
+                </h2>
+                <p id="cine-card-sub" class="text-xs lg:text-sm text-[#f2f0ea]/90 bg-[#0a0b0e]/85 border-l-4 border-[#e11d48] pl-3 py-1.5 mt-2 max-w-xl tracking-wide">
+                    Stepped mechanical rails, robotic laser collimators & quantum sample bells anchored in deep space.
+                </p>
+            </div>
+        </div>
+
+        <!-- Calibration Rulers on Borders -->
+        <div class="absolute top-0 left-12 right-12 h-1.5 ruler-x opacity-40 pointer-events-none"></div>
+        <div class="absolute bottom-0 left-12 right-12 h-1.5 ruler-x opacity-40 pointer-events-none"></div>
+        <div class="absolute left-0 top-12 bottom-12 w-1.5 ruler-y opacity-40 pointer-events-none"></div>
+        <div class="absolute right-0 top-12 bottom-12 w-1.5 ruler-y opacity-40 pointer-events-none"></div>
+
+        <!-- 3D WEBGL VIEWPORT (Dominates Center / 65%+ visual weight) -->
+        <div id="webgl-container" class="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"></div>
+
+        <!-- SVG LEADER LINES OVERLAY (Connects 3D Anchors to Editorial Callouts & Diagrams) -->
+        <svg id="leader-svg" class="absolute inset-0 w-full h-full pointer-events-none z-10"></svg>
+
+        <!-- 3D PROJECTED CALLOUT ANCHORS -->
+        <div id="callouts-container" class="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+            <!-- Populated and updated dynamically by JS -->
+        </div>
+
+        <!-- ======================================================================= -->
+        <!-- TOP HEADER BAR (10% Area: Title, Subtitle, Research Status, Controls)  -->
+        <!-- ======================================================================= -->
+        <header class="relative z-30 flex flex-wrap items-start justify-between gap-4 pointer-events-none">
+            <!-- Title & Architectural Classification -->
+            <div class="tech-panel px-5 py-3.5 pointer-events-auto flex items-center gap-6">
+                <div>
+                    <div class="flex items-center gap-2.5 text-[10px] tracking-[0.2em] text-[#8c939e] mb-0.5">
+                        <span>PLATE ARCH-09 // ORBITAL DEEP-THEORY FACILITY</span>
+                        <span class="text-[#b86b43]">● REV 4.28</span>
+                    </div>
+                    <h1 class="font-display text-2xl lg:text-3xl font-bold tracking-[0.08em] text-[#f2f0ea] leading-none">
+                        TAMESIS NEXUS
+                    </h1>
+                    <div class="text-xs tracking-[0.18em] text-[#8c939e] mt-1 font-medium">
+                        REALITY MODELING SYSTEM <span class="text-[#f2f0ea]/40 mx-1">|</span> THE ARCHITECTURE OF REALITY
+                    </div>
+                </div>
+
+                <div class="h-10 w-[1px] bg-[#8c939e]/30 hidden sm:block"></div>
+
+                <!-- Exact Required Status Badge -->
+                <div class="hidden sm:flex flex-col justify-center">
+                    <div class="text-[9px] tracking-[0.15em] text-[#8c939e] uppercase">Operational Classification</div>
+                    <div class="flex items-center gap-2 mt-1 px-2.5 py-1 bg-[#f59e0b]/10 border border-[#f59e0b]/40">
+                        <span class="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse"></span>
+                        <span class="text-[11px] font-semibold tracking-[0.12em] text-[#f59e0b]">RESEARCH STATUS: EXPLORATORY</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Axonometric & Layer Explosion Controls -->
+            <div class="tech-panel px-4 py-2.5 pointer-events-auto flex flex-wrap items-center gap-4">
+                <!-- Explosion Slider -->
+                <div class="flex flex-col">
+                    <div class="flex justify-between text-[10px] tracking-[0.1em] text-[#8c939e] mb-1">
+                        <span>AXONOMETRIC LAYER EXPLOSION</span>
+                        <span id="explosion-val" class="text-[#f2f0ea] font-semibold">35%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] text-[#8c939e]">COMPACT</span>
+                        <input id="explosion-slider" type="range" min="0" max="100" value="35" class="tech-slider w-28 lg:w-36">
+                        <span class="text-[9px] text-[#f59e0b]">EXPLODED</span>
+                    </div>
+                </div>
+
+                <div class="h-8 w-[1px] bg-[#8c939e]/30"></div>
+
+                <!-- Camera Presets -->
+                <div class="flex items-center gap-1.5">
+                    <button id="btn-play-30s" class="px-3 py-1.5 text-[10px] font-bold tracking-wider border-2 border-[#f59e0b] bg-gradient-to-r from-[#7c3aed]/40 via-[#e11d48]/40 to-[#f59e0b]/40 text-[#f2f0ea] hover:scale-105 transition shadow-[0_0_15px_rgba(245,158,11,0.35)] flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-[#e11d48] animate-ping"></span>
+                        <span>▶ 30S ENTERGALACTIC ZOOM</span>
+                    </button>
+                    <button id="btn-cam-iso" class="px-2.5 py-1.5 text-[10px] tracking-wider border border-[#f2f0ea]/60 bg-[#f2f0ea]/10 text-[#f2f0ea] hover:bg-[#f2f0ea]/20 transition">
+                        3/4 AXONOMETRIC
+                    </button>
+                    <button id="btn-cam-top" class="px-2.5 py-1.5 text-[10px] tracking-wider border border-[#8c939e]/30 text-[#8c939e] hover:text-[#f2f0ea] hover:border-[#8c939e] transition">
+                        ZENITH PLAN
+                    </button>
+                    <button id="btn-cam-core" class="px-2.5 py-1.5 text-[10px] tracking-wider border border-[#8c939e]/30 text-[#8c939e] hover:text-[#f2f0ea] hover:border-[#8c939e] transition">
+                        CORE FOCUS
+                    </button>
+                    <button id="btn-toggle-rot" class="px-2.5 py-1.5 text-[10px] tracking-wider border border-[#10b981]/50 text-[#10b981] bg-[#10b981]/10 hover:bg-[#10b981]/20 transition">
+                        ORBIT: ON
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ======================================================================= -->
+        <!-- MIDDLE WORKSPACE: LEFT HIERARCHY & RIGHT SCIENTIFIC CHARTS (15% Area)   -->
+        <!-- ======================================================================= -->
+        <div class="relative z-30 flex-1 flex items-center justify-between pointer-events-none my-2 overflow-hidden">
+            
+            <!-- LEFT COLUMN: 5 Spatial Layers & Spacetime Cross-Section -->
+            <aside class="side-ui-panel flex flex-col gap-3 w-64 lg:w-72 pointer-events-auto">
+                
+                <!-- 5-Level Spatial Hierarchy Selector -->
+                <div class="tech-panel p-3.5">
+                    <div class="flex items-center justify-between border-b border-[#8c939e]/20 pb-2 mb-2.5">
+                        <span class="text-[10px] font-semibold tracking-[0.15em] text-[#f2f0ea]">SPATIAL STRATIFICATION</span>
+                        <button id="btn-reset-layers" class="text-[9px] text-[#f59e0b] hover:underline">SHOW ALL</button>
+                    </div>
+                    <div class="space-y-1.5 text-[10px]">
+                        <button data-layer="5" class="layer-btn active w-full text-left px-2.5 py-1.5 border border-[#8c939e]/25 flex items-center justify-between transition">
+                            <span><strong class="text-[#f59e0b]">LVL 05</strong> // EVIDENCE & INTERPRETATION</span>
+                            <span class="text-[9px] text-[#8c939e]">+18.0m</span>
+                        </button>
+                        <button data-layer="4" class="layer-btn active w-full text-left px-2.5 py-1.5 border border-[#8c939e]/25 flex items-center justify-between transition">
+                            <span><strong class="text-[#7c3aed]">LVL 04</strong> // OBSERVATION & COGNITION</span>
+                            <span class="text-[9px] text-[#8c939e]">+10.5m</span>
+                        </button>
+                        <button data-layer="3" class="layer-btn active w-full text-left px-2.5 py-1.5 border border-[#8c939e]/25 flex items-center justify-between transition">
+                            <span><strong class="text-[#f2f0ea]">LVL 03</strong> // PHYSICAL MODELS & CORE</span>
+                            <span class="text-[9px] text-[#8c939e]">0.0m</span>
+                        </button>
+                        <button data-layer="2" class="layer-btn active w-full text-left px-2.5 py-1.5 border border-[#8c939e]/25 flex items-center justify-between transition">
+                            <span><strong class="text-[#10b981]">LVL 02</strong> // COMPUTATIONAL LAYER</span>
+                            <span class="text-[9px] text-[#8c939e]">-8.5m</span>
+                        </button>
+                        <button data-layer="1" class="layer-btn active w-full text-left px-2.5 py-1.5 border border-[#8c939e]/25 flex items-center justify-between transition">
+                            <span><strong class="text-[#b86b43]">LVL 01</strong> // INFRASTRUCTURE & RIGS</span>
+                            <span class="text-[9px] text-[#8c939e]">-16.0m</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Deformable Spacetime Cross-Section Panel (Requirement 4.B) -->
+                <div class="tech-panel p-3.5">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10px] font-semibold tracking-[0.14em] text-[#f2f0ea]">SPACETIME METRIC SECTION A-A'</span>
+                        <span class="text-[8px] px-1.5 py-0.5 bg-[#8c939e]/15 text-[#8c939e]">SIMULATED DATA</span>
+                    </div>
+                    <div class="text-[9px] text-[#8c939e] mb-2">
+                        Geodesic curvature $\ g_{\mu\nu}$ & metric horizon truncation ($r \to r_s$)
+                    </div>
+                    <!-- High-Precision SVG Cross Section -->
+                    <svg viewBox="0 0 240 105" class="w-full h-24 bg-[#07080a] border border-[#8c939e]/20">
+                        <defs>
+                            <pattern id="sec-grid" width="12" height="12" patternUnits="userSpaceOnUse">
+                                <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(140,147,158,0.12)" stroke-width="0.5"/>
+                            </pattern>
+                        </defs>
+                        <rect width="240" height="105" fill="url(#sec-grid)" />
+                        <!-- Reference Flat Horizon -->
+                        <line x1="10" y1="22" x2="230" y2="22" stroke="#8c939e" stroke-width="0.6" stroke-dasharray="2,2"/>
+                        <!-- Deformed Metric Funnel Curves (Upper to Lower strata) -->
+                        <path d="M 10 26 Q 95 28 112 68 L 128 68 Q 145 28 230 26" fill="none" stroke="#8c939e" stroke-width="1"/>
+                        <path d="M 10 36 Q 102 40 116 88" fill="none" stroke="#f2f0ea" stroke-width="1.2"/>
+                        <path d="M 230 36 Q 138 40 124 88" fill="none" stroke="#f2f0ea" stroke-width="1.2"/>
+                        <!-- Interrupted Model Limit Lines (Singularity/Breakdown Region) -->
+                        <path d="M 116 88 L 119 102" fill="none" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="2,2"/>
+                        <path d="M 124 88 L 121 102" fill="none" stroke="#e11d48" stroke-width="1.2" stroke-dasharray="2,2"/>
+                        <!-- Particle Geodesic Trajectory -->
+                        <path d="M 18 18 C 75 22, 105 55, 136 45 C 165 36, 195 20, 225 16" fill="none" stroke="#f59e0b" stroke-width="1.3"/>
+                        <circle cx="136" cy="45" r="2.5" fill="#f59e0b"/>
+                        <!-- Central Icosahedral Mass Anchor -->
+                        <circle cx="120" cy="48" r="7" fill="rgba(124,58,237,0.25)" stroke="#7c3aed" stroke-width="1.2"/>
+                        <circle cx="120" cy="48" r="2" fill="#f2f0ea"/>
+                        <!-- Labels -->
+                        <text x="14" y="15" fill="#8c939e" font-size="6.5">FLAT ASYMPTOTE</text>
+                        <text x="142" y="50" fill="#f59e0b" font-size="6.5">GEODESIC $\gamma(\tau)$</text>
+                        <text x="130" y="96" fill="#e11d48" font-size="6.5">MODEL LIMIT (TRUNCATED)</text>
+                    </svg>
+                    <div class="mt-2 flex items-center justify-between text-[9px] text-[#8c939e]">
+                        <span>TENSOR CURVATURE: <strong class="text-[#f2f0ea]">NON-EUCLIDEAN</strong></span>
+                        <span class="text-[#e11d48]">BOUNDARY: OPEN</span>
+                    </div>
+                </div>
+
+                <!-- Selected Subsystem Inspector -->
+                <div id="inspector-panel" class="tech-panel p-3.5">
+                    <div class="text-[9px] tracking-[0.15em] text-[#f59e0b] uppercase mb-0.5">ACTIVE SUBSYSTEM TELEMETRY</div>
+                    <div id="insp-title" class="font-display text-sm font-bold text-[#f2f0ea] tracking-wide">GEOMETRIC STRUCTURE</div>
+                    <p id="insp-desc" class="text-[10px] text-[#8c939e] leading-relaxed mt-1">
+                        Tri-toroidal non-coplanar gimbal housing an translucent icosahedral cage and multi-shell topological manifold core.
+                    </p>
+                    <div class="mt-2 pt-2 border-t border-[#8c939e]/20 grid grid-cols-2 gap-2 text-[9px]">
+                        <div>
+                            <span class="text-[#8c939e] block">MATERIAL SPEC</span>
+                            <span id="insp-mat" class="text-[#f2f0ea] font-medium">Ti-6Al-4V / CuO / SiO2</span>
+                        </div>
+                        <div>
+                            <span class="text-[#8c939e] block">COHERENCE STATE</span>
+                            <span id="insp-state" class="text-[#10b981] font-medium">NOMINAL LOCK (99.4%)</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- RIGHT COLUMN: 3 Required Scientific Charts (15% Area) -->
+            <aside class="side-ui-panel flex flex-col gap-3 w-72 lg:w-80 pointer-events-auto">
+                
+                <!-- CHART 1: MODEL VS OBSERVATION (With Uncertainty/Discrepancy Region) -->
+                <div class="tech-panel p-3.5">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-semibold tracking-[0.12em] text-[#f2f0ea]">01 // MODEL VS. OBSERVATION</span>
+                        <span class="text-[8px] px-1.5 py-0.5 bg-[#8c939e]/15 text-[#8c939e]">SIMULATED DATA</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[9px] text-[#8c939e] mb-2">
+                        <span>OBSERVATIONAL DATA</span>
+                        <span class="text-[#e11d48] font-medium">■ UNCERTAINTY REGION</span>
+                    </div>
+
+                    <svg viewBox="0 0 260 115" class="w-full h-28 bg-[#07080a] border border-[#8c939e]/20">
+                        <!-- Axes -->
+                        <line x1="28" y1="12" x2="28" y2="94" stroke="#8c939e" stroke-width="0.8"/>
+                        <line x1="28" y1="94" x2="248" y2="94" stroke="#8c939e" stroke-width="0.8"/>
+                        <!-- Grid lines -->
+                        <line x1="28" y1="38" x2="248" y2="38" stroke="rgba(140,147,158,0.15)" stroke-width="0.5"/>
+                        <line x1="28" y1="66" x2="248" y2="66" stroke="rgba(140,147,158,0.15)" stroke-width="0.5"/>
+                        <line x1="155" y1="12" x2="155" y2="94" stroke="#e11d48" stroke-width="0.7" stroke-dasharray="2,2"/>
+
+                        <!-- Discrepancy / Uncertainty Shaded Region (High Energy Divergence) -->
+                        <path d="M 155 47 C 180 42, 210 26, 242 16 L 242 74 C 210 68, 180 56, 155 47 Z" fill="rgba(225, 29, 72, 0.22)" stroke="none"/>
+                        
+                        <!-- Curve A: Theoretical Prediction (Deep Violet / Mineral White) -->
+                        <path d="M 30 84 C 70 78, 115 58, 155 47 C 180 42, 210 26, 242 16" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+                        
+                        <!-- Curve B: Observational Data (Amber / Emerald) -->
+                        <path d="M 30 85 C 70 79, 115 59, 155 47 C 180 56, 210 68, 242 74" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,1.5"/>
+
+                        <!-- Validated Data Points -->
+                        <circle cx="55" cy="80" r="2" fill="#10b981"/>
+                        <circle cx="95" cy="68" r="2" fill="#10b981"/>
+                        <circle cx="135" cy="53" r="2" fill="#10b981"/>
+                        <!-- Divergent Anomaly Data Points -->
+                        <circle cx="185" cy="58" r="2.2" fill="#e11d48"/>
+                        <circle cx="225" cy="70" r="2.2" fill="#e11d48"/>
+
+                        <!-- Axis & Curve Labels -->
+                        <text x="6" y="55" fill="#8c939e" font-size="6.5" transform="rotate(-90 12,55)">RESPONSE $\Phi(E)$</text>
+                        <text x="105" y="108" fill="#8c939e" font-size="6.5">ENERGY SCALE $\Lambda / \Lambda_0$ (SIMULATED)</text>
+                        <text x="160" y="23" fill="#7c3aed" font-size="6.5">THEORY CURVE</text>
+                        <text x="162" y="84" fill="#f59e0b" font-size="6.5">OBSERVED</text>
+                        <text x="160" y="45" fill="#e11d48" font-size="6" font-weight="bold">Δ DISCREPANCY</text>
+                    </svg>
+                </div>
+
+                <!-- CHART 2: DEPENDENCY NETWORK (Models, Parameters, Evidences) -->
+                <div class="tech-panel p-3.5">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-semibold tracking-[0.12em] text-[#f2f0ea]">02 // EPISTEMIC DEPENDENCY GRAPH</span>
+                        <span class="text-[8px] px-1.5 py-0.5 bg-[#8c939e]/15 text-[#8c939e]">SIMULATED DATA</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[9px] text-[#8c939e] mb-2">
+                        <span>HYPOTHESIS TESTING</span>
+                        <span class="text-[#10b981]">● EVIDENCE VALIDATION</span>
+                    </div>
+
+                    <svg viewBox="0 0 260 110" class="w-full h-26 bg-[#07080a] border border-[#8c939e]/20">
+                        <!-- Edges -->
+                        <line x1="45" y1="30" x2="120" y2="28" stroke="#7c3aed" stroke-width="1"/>
+                        <line x1="45" y1="30" x2="120" y2="62" stroke="#8c939e" stroke-width="0.8"/>
+                        <line x1="45" y1="78" x2="120" y2="62" stroke="#f59e0b" stroke-width="1.2"/>
+                        <line x1="45" y1="78" x2="120" y2="90" stroke="#8c939e" stroke-width="0.8"/>
+                        
+                        <line x1="120" y1="28" x2="205" y2="32" stroke="#10b981" stroke-width="1.4"/>
+                        <line x1="120" y1="62" x2="205" y2="32" stroke="#10b981" stroke-width="1.1"/>
+                        <!-- Falsified / Broken Link -->
+                        <line x1="120" y1="62" x2="205" y2="82" stroke="#e11d48" stroke-width="1.3" stroke-dasharray="3,2"/>
+                        <line x1="120" y1="90" x2="205" y2="82" stroke="#e11d48" stroke-width="1.3" stroke-dasharray="3,2"/>
+
+                        <!-- Nodes: Models (Left) -->
+                        <circle cx="45" cy="30" r="7" fill="#14171f" stroke="#7c3aed" stroke-width="1.5"/>
+                        <text x="39" y="32.5" fill="#f2f0ea" font-size="6.5">M1</text>
+                        <circle cx="45" cy="78" r="7" fill="#14171f" stroke="#7c3aed" stroke-width="1.5"/>
+                        <text x="39" y="80.5" fill="#f2f0ea" font-size="6.5">M2</text>
+
+                        <!-- Nodes: Parameters (Center) -->
+                        <rect x="112" y="20" width="16" height="16" fill="#14171f" stroke="#f59e0b" stroke-width="1.2"/>
+                        <text x="115" y="30.5" fill="#f2f0ea" font-size="6.5">Pα</text>
+                        <rect x="112" y="54" width="16" height="16" fill="#14171f" stroke="#f59e0b" stroke-width="1.2"/>
+                        <text x="115" y="64.5" fill="#f2f0ea" font-size="6.5">Pβ</text>
+                        <rect x="112" y="82" width="16" height="16" fill="#14171f" stroke="#8c939e" stroke-width="1"/>
+                        <text x="115" y="92.5" fill="#8c939e" font-size="6.5">Pγ</text>
+
+                        <!-- Nodes: Evidence Outcomes (Right) -->
+                        <polygon points="205,22 215,32 205,42 195,32" fill="rgba(16,185,129,0.2)" stroke="#10b981" stroke-width="1.5"/>
+                        <text x="220" y="34" fill="#10b981" font-size="6.5" font-weight="bold">VALIDATED (E1)</text>
+
+                        <polygon points="205,72 215,82 205,92 195,82" fill="rgba(225,29,72,0.2)" stroke="#e11d48" stroke-width="1.5"/>
+                        <text x="220" y="81" fill="#e11d48" font-size="6.5" font-weight="bold">FALSIFIED (E2)</text>
+                        <text x="220" y="89" fill="#e11d48" font-size="5.5">MODEL INCOMPATIBILITY</text>
+                    </svg>
+                </div>
+
+                <!-- CHART 3: UNCERTAINTY MAP (Matrix Heatmap + Legend) -->
+                <div class="tech-panel p-3.5">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-semibold tracking-[0.12em] text-[#f2f0ea]">03 // PARAMETER UNCERTAINTY MATRIX</span>
+                        <span class="text-[8px] px-1.5 py-0.5 bg-[#8c939e]/15 text-[#8c939e]">SIMULATED DATA</span>
+                    </div>
+                    <div class="text-[9px] text-[#8c939e] mb-2">
+                        Cross-entropy variance $\sigma^2_{ij}$ across topological strata
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <svg id="uncertainty-matrix" viewBox="0 0 150 90" class="w-40 h-24 bg-[#07080a] border border-[#8c939e]/20 p-1">
+                            <!-- Matrix cells populated by JS for crisp precision -->
+                        </svg>
+                        <!-- Matrix Scale & Legend -->
+                        <div class="flex-1 text-[9px] space-y-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-[#10b981] inline-block border border-white/20"></span>
+                                <span class="text-[#f2f0ea]">CONVERGENT (&lt;0.05)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-[#7c3aed] inline-block border border-white/20"></span>
+                                <span class="text-[#f2f0ea]">ABSTRACT PRIOR</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-[#f59e0b] inline-block border border-white/20"></span>
+                                <span class="text-[#f2f0ea]">DRIFTING BOUND</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-[#e11d48] inline-block border border-white/20"></span>
+                                <span class="text-[#e11d48] font-semibold">INCOMPATIBLE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+        </div>
+
+        <!-- ======================================================================= -->
+        <!-- BOTTOM FOOTER BAR (10% Area: Chromatic Legend, Modules & Engineering ID) -->
+        <!-- ======================================================================= -->
+        <footer class="relative z-30 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+            
+            <!-- Chromatic Semantic Code Legend -->
+            <div class="tech-panel px-4 py-2.5 pointer-events-auto flex flex-wrap items-center gap-4 text-[10px]">
+                <span class="text-[#8c939e] font-semibold tracking-[0.12em]">CHROMATIC TAXONOMY:</span>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 bg-[#8c939e] inline-block"></span>
+                    <span>BRUSHED TITANIUM (STRUCTURE)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 bg-[#b86b43] inline-block"></span>
+                    <span>OXIDIZED COPPER (MECHANICS)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 bg-[#f59e0b] inline-block"></span>
+                    <span>AMBER (ACTIVE DATA BUS)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 bg-[#10b981] inline-block"></span>
+                    <span>EMERALD (VALIDATED)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 bg-[#e11d48] inline-block"></span>
+                    <span>CRIMSON (MODEL INCOMPATIBILITY)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 bg-[#7c3aed] inline-block"></span>
+                    <span>DEEP VIOLET (MATH / COGNITION)</span>
+                </div>
+            </div>
+
+            <!-- Scientific Evidence Modules Quick Focus Bar -->
+            <div class="tech-panel px-4 py-2 pointer-events-auto flex items-center gap-2 text-[10px]">
+                <span class="text-[#8c939e] mr-1">EVIDENCE MODULES:</span>
+                <button data-focus="mod-obs" class="focus-btn px-2 py-1 border border-[#f59e0b]/40 text-[#f59e0b] hover:bg-[#f59e0b]/15 transition">
+                    01. OBSERVATION
+                </button>
+                <button data-focus="mod-the" class="focus-btn px-2 py-1 border border-[#7c3aed]/40 text-[#7c3aed] hover:bg-[#7c3aed]/15 transition">
+                    02. THEORY
+                </button>
+                <button data-focus="mod-val" class="focus-btn px-2 py-1 border border-[#10b981]/40 text-[#10b981] hover:bg-[#10b981]/15 transition">
+                    03. VALIDATION
+                </button>
+                <button data-focus="mod-fal" class="focus-btn px-2 py-1 border border-[#e11d48]/50 text-[#e11d48] bg-[#e11d48]/10 hover:bg-[#e11d48]/20 transition">
+                    04. FALSIFICATION [SEVERED]
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- THREE.JS SCIENTIFIC ARCHITECTURAL ENGINE                                -->
+    <!-- ======================================================================= -->
+    <script>
+        (function() {
+            // 1. POPULATE UNCERTAINTY MATRIX SVG (Chart 3)
+            const matrixSvg = document.getElementById('uncertainty-matrix');
+            const rows = 5, cols = 8;
+            const cellW = 16, cellH = 14, pad = 2;
+            const paletteMatrix = [
+                ['#10b981','#10b981','#7c3aed','#10b981','#10b981','#f59e0b','#10b981','#7c3aed'],
+                ['#10b981','#7c3aed','#7c3aed','#10b981','#f59e0b','#f59e0b','#e11d48','#f59e0b'],
+                ['#7c3aed','#10b981','#10b981','#f59e0b','#e11d48','#e11d48','#e11d48','#f59e0b'],
+                ['#10b981','#10b981','#f59e0b','#7c3aed','#f59e0b','#e11d48','#7c3aed','#10b981'],
+                ['#10b981','#7c3aed','#10b981','#10b981','#7c3aed','#f59e0b','#10b981','#10b981']
+            ];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', 6 + c * (cellW + pad));
+                    rect.setAttribute('y', 6 + r * (cellH + pad));
+                    rect.setAttribute('width', cellW);
+                    rect.setAttribute('height', cellH);
+                    rect.setAttribute('fill', paletteMatrix[r][c]);
+                    rect.setAttribute('fill-opacity', paletteMatrix[r][c] === '#e11d48' ? '0.85' : '0.55');
+                    rect.setAttribute('stroke', '#0a0b0e');
+                    rect.setAttribute('stroke-width', '0.5');
+                    matrixSvg.appendChild(rect);
+                }
+            }
+
+            // 2. INITIALIZE THREE.JS SCENE, CAMERA, RENDERER
+            const container = document.getElementById('webgl-container');
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0a0b0e, 0.008);
+
+            const camera = new THREE.PerspectiveCamera(34, container.clientWidth / container.clientHeight, 0.1, 1000);
+            // Three-quarter axonometric perspective tilt
+            camera.position.set(42, 30, 46);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.15;
+            container.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 1, 0);
+            controls.maxDistance = 110;
+            controls.minDistance = 16;
+
+            // 3. LIGHTING STRATEGY (Requirement 6)
+            const ambientLight = new THREE.AmbientLight(0xd8dce6, 0.55);
+            scene.add(ambientLight);
+
+            // Broad Soft Key Light
+            const keyLight = new THREE.DirectionalLight(0xfffcf5, 1.8);
+            keyLight.position.set(35, 60, 40);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.camera.near = 10;
+            keyLight.shadow.camera.far = 140;
+            const d = 35;
+            keyLight.shadow.camera.left = -d;
+            keyLight.shadow.camera.right = d;
+            keyLight.shadow.camera.top = d;
+            keyLight.shadow.camera.bottom = -d;
+            keyLight.shadow.bias = -0.0005;
+            scene.add(keyLight);
+
+            // Rim Light to separate structure from graphite background
+            const rimLight = new THREE.DirectionalLight(0x90a4ae, 1.1);
+            rimLight.position.set(-45, 25, -40);
+            scene.add(rimLight);
+
+            // Subtle under-fill warm copper reflection
+            const underLight = new THREE.DirectionalLight(0xb86b43, 0.45);
+            underLight.position.set(0, -40, 10);
+            scene.add(underLight);
+
+            // Core Internal Point Light (Deep Violet / Amber glow)
+            const coreLight = new THREE.PointLight(0x7c3aed, 2.2, 28);
+            coreLight.position.set(0, 2, 0);
+            scene.add(coreLight);
+
+            // 4. CONTROLLED CHROMATIC PALETTE MATERIALS (Requirement 3 & 6)
+            const MAT = {
+                titanium: new THREE.MeshStandardMaterial({
+                    color: 0x8c939e, metalness: 0.82, roughness: 0.32
+                }),
+                darkTitanium: new THREE.MeshStandardMaterial({
+                    color: 0x2a2e37, metalness: 0.85, roughness: 0.4
+                }),
+                mineralWhite: new THREE.MeshStandardMaterial({
+                    color: 0xf2f0ea, metalness: 0.1, roughness: 0.25
+                }),
+                oxidizedCopper: new THREE.MeshStandardMaterial({
+                    color: 0xb86b43, metalness: 0.75, roughness: 0.45
+                }),
+                patinaCopper: new THREE.MeshStandardMaterial({
+                    color: 0x5c7a6b, metalness: 0.4, roughness: 0.65
+                }),
+                glass: new THREE.MeshPhysicalMaterial({
+                    color: 0xf2f0ea, transparent: true, opacity: 0.24,
+                    roughness: 0.08, metalness: 0.1, side: THREE.DoubleSide, depthWrite: false
+                }),
+                violetGlass: new THREE.MeshPhysicalMaterial({
+                    color: 0x7c3aed, emissive: 0x2e1065, emissiveIntensity: 0.4,
+                    transparent: true, opacity: 0.38, roughness: 0.15, side: THREE.DoubleSide, depthWrite: false
+                }),
+                amberEmissive: new THREE.MeshStandardMaterial({
+                    color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 1.5, roughness: 0.2
+                }),
+                emeraldEmissive: new THREE.MeshStandardMaterial({
+                    color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 1.3, roughness: 0.2
+                }),
+                crimsonEmissive: new THREE.MeshStandardMaterial({
+                    color: 0xe11d48, emissive: 0xe11d48, emissiveIntensity: 1.6, roughness: 0.2
+                }),
+                violetEmissive: new THREE.MeshStandardMaterial({
+                    color: 0x7c3aed, emissive: 0x7c3aed, emissiveIntensity: 1.3, roughness: 0.25
+                }),
+                wireTitanium: new THREE.LineBasicMaterial({ color: 0x8c939e, transparent: true, opacity: 0.35 }),
+                wireWhite: new THREE.LineBasicMaterial({ color: 0xf2f0ea, transparent: true, opacity: 0.55 }),
+                wireAmber: new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.8 }),
+                wireViolet: new THREE.LineBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.65 }),
+                wireEmerald: new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.75 }),
+                wireCrimson: new THREE.LineBasicMaterial({ color: 0xe11d48, transparent: true, opacity: 0.85 })
+            };
+
+            // 5. SPATIAL LAYER GROUPS (Requirement 5: 5-Level Axonometric Explosion)
+            const masterComplex = new THREE.Group();
+            scene.add(masterComplex);
+
+            const layers = {
+                1: new THREE.Group(), // Level 1 — Infrastructure & Experimental Observatory Base
+                2: new THREE.Group(), // Level 2 — Computational Architecture & Data Distribution
+                3: new THREE.Group(), // Level 3 — Fundamental Geometry Core & Deformable Spacetime
+                4: new THREE.Group(), // Level 4 — Observation & Abstract Neural System
+                5: new THREE.Group()  // Level 5 — Scientific Evidence Modules & Interpretation
+            };
+
+            // Base vertical offsets and explosion multipliers
+            const layerConfig = {
+                1: { baseY: -10.5, explodeOffset: -9.5 },
+                2: { baseY: -5.0,  explodeOffset: -4.5 },
+                3: { baseY: 2.0,   explodeOffset: 0.0  },
+                4: { baseY: 8.5,   explodeOffset: 5.5  },
+                5: { baseY: 13.5,  explodeOffset: 10.5 }
+            };
+
+            Object.keys(layers).forEach(k => {
+                masterComplex.add(layers[k]);
+            });
+
+            // Helper function to add micro-bolts/fasteners around circular flanges
+            function addMicroBolts(parent, radius, yPos, count, mat = MAT.oxidizedCopper) {
+                const boltGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.25, 6);
+                for (let i = 0; i < count; i++) {
+                    const ang = (i / count) * Math.PI * 2;
+                    const bolt = new THREE.Mesh(boltGeo, mat);
+                    bolt.position.set(Math.cos(ang) * radius, yPos, Math.sin(ang) * radius);
+                    parent.add(bolt);
+                }
+            }
+
+            // =========================================================================
+            // SUBSYSTEM A & B (LEVEL 3): FUNDAMENTAL GEOMETRY CORE & DEFORMABLE SPACETIME
+            // =========================================================================
+            const coreGroup = new THREE.Group();
+            layers[3].add(coreGroup);
+
+            // 1. Inner Topological Complex Sphere (Multi-layered concentric shells)
+            const innerCoreSphere = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(1.7, 3),
+                new THREE.MeshStandardMaterial({
+                    color: 0x1a1c23, metalness: 0.9, roughness: 0.25, wireframe: false
+                })
+            );
+            coreGroup.add(innerCoreSphere);
+
+            // Topological mathematical Knot inside sphere
+            const topoKnot = new THREE.Mesh(
+                new THREE.TorusKnotGeometry(1.05, 0.22, 96, 16, 2, 3),
+                MAT.oxidizedCopper
+            );
+            coreGroup.add(topoKnot);
+
+            // Concentric shell 2: Geodesic Curved Field Lines around sphere
+            const geoLinesGroup = new THREE.Group();
+            for (let i = 0; i < 6; i++) {
+                const curvePts = [];
+                const rad = 2.35;
+                const tilt = (i / 6) * Math.PI;
+                for (let j = 0; j <= 64; j++) {
+                    const t = (j / 64) * Math.PI * 2;
+                    const x = Math.cos(t) * rad;
+                    const y = Math.sin(t) * Math.sin(tilt) * rad;
+                    const z = Math.sin(t) * Math.cos(tilt) * rad;
+                    curvePts.push(new THREE.Vector3(x, y, z));
+                }
+                const geoLine = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(curvePts),
+                    i % 2 === 0 ? MAT.wireAmber : MAT.wireViolet
+                );
+                geoLinesGroup.add(geoLine);
+            }
+            coreGroup.add(geoLinesGroup);
+
+            // 2. Partially Transparent Central Icosahedron + Vertex Connection Network
+            const icosaGeo = new THREE.IcosahedronGeometry(3.4, 0);
+            const icosaMesh = new THREE.Mesh(icosaGeo, MAT.glass);
+            coreGroup.add(icosaMesh);
+
+            const icosaEdges = new THREE.LineSegments(
+                new THREE.EdgesGeometry(icosaGeo),
+                MAT.wireWhite
+            );
+            coreGroup.add(icosaEdges);
+
+            // Vertex nodes & internal vertex-to-origin struts
+            const posAttr = icosaGeo.attributes.position;
+            const uniqueVerts = [];
+            for (let i = 0; i < posAttr.count; i++) {
+                const v = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+                if (!uniqueVerts.some(u => u.distanceTo(v) < 0.01)) {
+                    uniqueVerts.push(v);
+                }
+            }
+            const nodeSphereGeo = new THREE.SphereGeometry(0.16, 12, 12);
+            uniqueVerts.forEach((v, idx) => {
+                const node = new THREE.Mesh(nodeSphereGeo, idx % 3 === 0 ? MAT.amberEmissive : MAT.oxidizedCopper);
+                node.position.copy(v);
+                coreGroup.add(node);
+
+                // Internal vertex connection network
+                const strutGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), v]);
+                coreGroup.add(new THREE.Line(strutGeo, MAT.wireViolet));
+            });
+
+            // 3. Three Interlaced Toroidal Rings (Different orientations, thicknesses, and materials)
+            const ring1 = new THREE.Group(); // Outer Heavy Brushed Titanium Ring
+            const r1Mesh = new THREE.Mesh(new THREE.TorusGeometry(6.2, 0.36, 24, 96), MAT.titanium);
+            r1Mesh.castShadow = true;
+            ring1.add(r1Mesh);
+            // Mechanical clamps on Ring 1
+            for (let c = 0; c < 8; c++) {
+                const a = (c / 8) * Math.PI * 2;
+                const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.45), MAT.darkTitanium);
+                clamp.position.set(Math.cos(a) * 6.2, Math.sin(a) * 6.2, 0);
+                clamp.rotation.z = a;
+                ring1.add(clamp);
+            }
+            ring1.rotation.set(Math.PI / 5, Math.PI / 8, 0);
+            coreGroup.add(ring1);
+
+            const ring2 = new THREE.Group(); // Middle Oxidized Copper Precision Ring
+            const r2Mesh = new THREE.Mesh(new THREE.TorusGeometry(5.1, 0.24, 20, 84), MAT.oxidizedCopper);
+            r2Mesh.castShadow = true;
+            ring2.add(r2Mesh);
+            ring2.rotation.set(-Math.PI / 3, Math.PI / 4, Math.PI / 6);
+            coreGroup.add(ring2);
+
+            const ring3 = new THREE.Group(); // Inner Mineral White / Deep Violet Calibration Ring
+            const r3Mesh = new THREE.Mesh(new THREE.TorusGeometry(4.2, 0.15, 16, 72), MAT.mineralWhite);
+            ring3.add(r3Mesh);
+            ring3.rotation.set(Math.PI / 2.2, -Math.PI / 5, 0);
+            coreGroup.add(ring3);
+
+            // Mathematical Ribbon Surface piercing partially through the rings
+            const surfaceCurvePts = [];
+            for (let i = 0; i <= 80; i++) {
+                const t = (i / 80) * Math.PI * 2;
+                surfaceCurvePts.push(new THREE.Vector3(
+                    Math.cos(t) * (4.8 + Math.sin(t * 3) * 1.4),
+                    Math.sin(t * 2) * 2.6,
+                    Math.sin(t) * (4.8 + Math.cos(t * 3) * 1.4)
+                ));
+            }
+            const mathSurfaceCurve = new THREE.CatmullRomCurve3(surfaceCurvePts, true);
+            const mathRibbonMesh = new THREE.Mesh(
+                new THREE.TubeGeometry(mathSurfaceCurve, 120, 0.18, 8, true),
+                MAT.violetGlass
+            );
+            coreGroup.add(mathRibbonMesh);
+
+            // 4. Mechanical Support Gimbals & Orbital Satellites
+            const gimbalStanchionGeo = new THREE.CylinderGeometry(0.22, 0.35, 14, 12);
+            for (let s = 0; s < 3; s++) {
+                const ang = (s / 3) * Math.PI * 2 + 0.4;
+                const stanchion = new THREE.Mesh(gimbalStanchionGeo, MAT.darkTitanium);
+                stanchion.position.set(Math.cos(ang) * 7.2, 0, Math.sin(ang) * 7.2);
+                stanchion.rotation.z = Math.sin(ang) * 0.15;
+                stanchion.rotation.x = Math.cos(ang) * 0.15;
+                coreGroup.add(stanchion);
+            }
+
+            // Small Orbital Components in distinct planes
+            const orbitalsGroup = new THREE.Group();
+            for (let o = 0; o < 5; o++) {
+                const orbPivot = new THREE.Group();
+                orbPivot.rotation.set(o * 0.7, o * 1.1, o * 0.4);
+                const radius = 6.8 + (o % 2) * 1.4;
+                const sat = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), o % 2 === 0 ? MAT.mineralWhite : MAT.amberEmissive);
+                sat.position.set(radius, 0, 0);
+                orbPivot.add(sat);
+
+                // Faint orbital track
+                const track = new THREE.LineLoop(
+                    new THREE.BufferGeometry().setFromPoints(
+                        new THREE.Path().absarc(0, 0, radius, 0, Math.PI * 2, false).getPoints(64)
+                    ),
+                    MAT.wireTitanium
+                );
+                track.rotation.x = Math.PI / 2;
+                orbPivot.add(track);
+                orbitalsGroup.add(orbPivot);
+            }
+            coreGroup.add(orbitalsGroup);
+
+            // 5. SUBSYSTEM B: Deformable 3D Spacetime Mesh (Gravity Well & Interrupted Horizon)
+            const spacetimeGroup = new THREE.Group();
+            spacetimeGroup.position.y = -2.2;
+            layers[3].add(spacetimeGroup);
+
+            const gridRadius = 15.5;
+            const radialRings = 16;
+            const angularSpokes = 36;
+
+            // Radial concentric deformed rings (Higher density near central mass)
+            for (let r = 1; r <= radialRings; r++) {
+                const norm = Math.pow(r / radialRings, 1.35); // Non-uniform density!
+                const rad = 2.0 + norm * (gridRadius - 2.0);
+                const depression = -5.8 / (rad * 0.48 + 0.6);
+
+                const ringPts = [];
+                for (let a = 0; a <= angularSpokes * 2; a++) {
+                    const theta = (a / (angularSpokes * 2)) * Math.PI * 2;
+                    // Create interrupted model limit gaps in inner horizon (r <= 3)
+                    if (r <= 3 && (a % 6 === 0)) {
+                        if (ringPts.length > 1) {
+                            spacetimeGroup.add(new THREE.Line(
+                                new THREE.BufferGeometry().setFromPoints(ringPts),
+                                MAT.wireCrimson
+                            ));
+                        }
+                        ringPts.length = 0;
+                    } else {
+                        const wave = Math.sin(theta * 3) * 0.15 * (1 - norm);
+                        ringPts.push(new THREE.Vector3(
+                            Math.cos(theta) * rad,
+                            depression + wave,
+                            Math.sin(theta) * rad
+                        ));
+                    }
+                }
+                if (ringPts.length > 1) {
+                    spacetimeGroup.add(new THREE.Line(
+                        new THREE.BufferGeometry().setFromPoints(ringPts),
+                        r <= 3 ? MAT.wireCrimson : (r % 4 === 0 ? MAT.wireWhite : MAT.wireTitanium)
+                    ));
+                }
+            }
+
+            // Angular geodesic spokes curving down into central mass
+            for (let a = 0; a < angularSpokes; a++) {
+                const theta = (a / angularSpokes) * Math.PI * 2;
+                const spokePts = [];
+                const startR = (a % 3 === 0) ? 1.8 : 3.2; // Variable density & model limit truncation
+                for (let r = 0; r <= 24; r++) {
+                    const rad = startR + (r / 24) * (gridRadius - startR);
+                    const depression = -5.8 / (rad * 0.48 + 0.6);
+                    spokePts.push(new THREE.Vector3(
+                        Math.cos(theta) * rad,
+                        depression,
+                        Math.sin(theta) * rad
+                    ));
+                }
+                spacetimeGroup.add(new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(spokePts),
+                    a % 6 === 0 ? MAT.wireWhite : MAT.wireTitanium
+                ));
+            }
+
+            // Curved Particle Trajectories skimming the gravitational well
+            const particleCurves = [];
+            for (let p = 0; p < 3; p++) {
+                const pts = [];
+                const offsetAng = (p / 3) * Math.PI * 2;
+                for (let t = -12; t <= 12; t += 0.5) {
+                    const x = t;
+                    const z = 3.2 + Math.sin(t * 0.25) * 1.8;
+                    const v = new THREE.Vector3(x, 0, z).applyAxisAngle(new THREE.Vector3(0,1,0), offsetAng);
+                    const dist = Math.sqrt(v.x * v.x + v.z * v.z);
+                    v.y = -5.8 / (dist * 0.48 + 0.6) + 0.35;
+                    pts.push(v);
+                }
+                const pCurve = new THREE.CatmullRomCurve3(pts);
+                particleCurves.push(pCurve);
+                const trajTube = new THREE.Mesh(
+                    new THREE.TubeGeometry(pCurve, 64, 0.055, 6, false),
+                    p === 0 ? MAT.amberEmissive : (p === 1 ? MAT.emeraldEmissive : MAT.crimsonEmissive)
+                );
+                spacetimeGroup.add(trajTube);
+            }
+
+            // =========================================================================
+            // SUBSYSTEM C (LEVEL 2): COMPUTATIONAL ARCHITECTURE (Stacked Tower & 3 Paths)
+            // =========================================================================
+            const compGroup = new THREE.Group();
+            layers[2].add(compGroup);
+
+            // Positioned in back-left quadrant (-9, 0, -6) converging to central core
+            const towerPos = new THREE.Vector3(-9.5, 0, -6.5);
+            const towerStack = new THREE.Group();
+            towerStack.position.copy(towerPos);
+            compGroup.add(towerStack);
+
+            const numStackLevels = 5;
+            for (let lvl = 0; lvl < numStackLevels; lvl++) {
+                const y = (lvl - 2) * 1.65;
+                const modGroup = new THREE.Group();
+                modGroup.position.y = y;
+
+                // Structural plate
+                const plate = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.35, 8), MAT.darkTitanium);
+                plate.castShadow = true;
+                plate.receiveShadow = true;
+                modGroup.add(plate);
+
+                // Radial cooling heatsink fins
+                for (let f = 0; f < 16; f++) {
+                    const ang = (f / 16) * Math.PI * 2;
+                    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.9, 0.08), MAT.titanium);
+                    fin.position.set(Math.cos(ang) * 2.8, 0.45, Math.sin(ang) * 2.8);
+                    fin.rotation.y = -ang;
+                    modGroup.add(fin);
+                }
+
+                // Removable hot-swap compute bays (Mineral White & Oxidized Copper)
+                for (let b = 0; b < 4; b++) {
+                    const ang = (b / 4) * Math.PI * 2 + 0.39;
+                    const isPulledOut = (lvl === 2 && b === 0); // Explicitly show removable compartment
+                    const dist = isPulledOut ? 3.55 : 2.55;
+                    const bay = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.65, 1.2), MAT.mineralWhite);
+                    bay.position.set(Math.cos(ang) * dist, 0.45, Math.sin(ang) * dist);
+                    bay.rotation.y = -ang;
+                    modGroup.add(bay);
+
+                    // Luminous status strip on bay
+                    const stripMat = b === 0 ? MAT.amberEmissive : (b === 1 ? MAT.emeraldEmissive : MAT.violetEmissive);
+                    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 1.24), stripMat);
+                    strip.position.copy(bay.position);
+                    strip.rotation.y = -ang;
+                    modGroup.add(strip);
+                }
+
+                towerStack.add(modGroup);
+            }
+
+            // Optical vertical buses linking tower levels
+            for (let o = 0; o < 4; o++) {
+                const ang = (o / 4) * Math.PI * 2;
+                const bus = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.06, 7.5, 8),
+                    o % 2 === 0 ? MAT.amberEmissive : MAT.violetEmissive
+                );
+                bus.position.set(Math.cos(ang) * 1.8, 0, Math.sin(ang) * 1.8);
+                towerStack.add(bus);
+            }
+
+            // THREE VISUALLY DISTINCT PROCESSING PATHS CONVERGING ON CENTRAL CORE:
+            // Path 1: Local Processing (Amber) — Tower -> Core
+            const pathLocalCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-9.5, 2.2, -6.5),
+                new THREE.Vector3(-6.0, 2.5, -4.0),
+                new THREE.Vector3(-3.2, 4.5, -1.8),
+                new THREE.Vector3(0, 6.5, 0)
+            ]);
+            compGroup.add(new THREE.Mesh(new THREE.TubeGeometry(pathLocalCurve, 48, 0.11, 8, false), MAT.amberEmissive));
+
+            // Path 2: Distributed Computation (Deep Violet) — Tower -> Neural Bridge -> Core
+            const pathDistCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-9.5, 0.2, -6.5),
+                new THREE.Vector3(-2.0, 1.0, -8.5),
+                new THREE.Vector3(6.5, 4.5, -5.5),
+                new THREE.Vector3(9.5, 8.5, -4.5)
+            ]);
+            compGroup.add(new THREE.Mesh(new THREE.TubeGeometry(pathDistCurve, 48, 0.09, 8, false), MAT.violetEmissive));
+
+            // Path 3: External Validation Bus (Emerald) — Tower -> Validation Module & Observatory
+            const pathExtCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-9.5, -2.2, -6.5),
+                new THREE.Vector3(-5.5, -2.5, 2.0),
+                new THREE.Vector3(0.0, -1.5, 6.5),
+                new THREE.Vector3(8.5, 2.5, 8.5)
+            ]);
+            compGroup.add(new THREE.Mesh(new THREE.TubeGeometry(pathExtCurve, 48, 0.09, 8, false), MAT.emeraldEmissive));
+
+            // =========================================================================
+            // SUBSYSTEM D (LEVEL 4): ABSTRACT NEURAL SYSTEM (Suspended Sculptural Quadrant)
+            // =========================================================================
+            const neuralGroup = new THREE.Group();
+            layers[4].add(neuralGroup);
+
+            const neuralCenter = new THREE.Vector3(10.0, 0.5, -5.0);
+            const neuralSculpture = new THREE.Group();
+            neuralSculpture.position.copy(neuralCenter);
+            neuralGroup.add(neuralSculpture);
+
+            // Generate non-literal abstract multi-layer topological filtering array
+            const neuralNodes = [];
+            const nodeCount = 34;
+            for (let n = 0; n < nodeCount; n++) {
+                // Stratified cylindrical/conical distribution (Input layer -> Dense hidden core -> Output filter)
+                const stratum = (n % 3) - 1; // -1, 0, 1
+                const angle = (n * 2.39996); // Golden angle spiral
+                const radius = stratum === 0 ? (0.8 + (n / nodeCount) * 2.2) : (2.2 + (n / nodeCount) * 2.4);
+                const pos = new THREE.Vector3(
+                    Math.cos(angle) * radius,
+                    stratum * 1.8 + Math.sin(n) * 0.6,
+                    Math.sin(angle) * radius
+                );
+                neuralNodes.push(pos);
+
+                const size = stratum === 0 ? 0.34 : 0.20;
+                const mat = stratum === 0 ? MAT.violetEmissive : (n % 4 === 0 ? MAT.amberEmissive : MAT.mineralWhite);
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 16, 16), mat);
+                sphere.position.copy(pos);
+                neuralSculpture.add(sphere);
+            }
+
+            // Organic branching translucent fibers connecting nodes with variable density
+            for (let i = 0; i < neuralNodes.length; i++) {
+                for (let j = i + 1; j < neuralNodes.length; j++) {
+                    const d = neuralNodes[i].distanceTo(neuralNodes[j]);
+                    if (d < 3.1) {
+                        const mid = new THREE.Vector3().addVectors(neuralNodes[i], neuralNodes[j]).multiplyScalar(0.5);
+                        mid.x += (Math.sin(i * j) * 0.35);
+                        mid.y += (Math.cos(i + j) * 0.35);
+                        const fiberCurve = new THREE.QuadraticBezierCurve3(neuralNodes[i], mid, neuralNodes[j]);
+                        const fiberLine = new THREE.Line(
+                            new THREE.BufferGeometry().setFromPoints(fiberCurve.getPoints(12)),
+                            d < 1.9 ? MAT.wireAmber : MAT.wireViolet
+                        );
+                        neuralSculpture.add(fiberLine);
+                    }
+                }
+            }
+
+            // Partially occluded translucent containment shells around the neural array
+            const containmentArcGeo = new THREE.CylinderGeometry(4.8, 4.8, 3.6, 32, 1, true, 0, Math.PI * 0.65);
+            const arc1 = new THREE.Mesh(containmentArcGeo, MAT.glass);
+            neuralSculpture.add(arc1);
+            const arc2 = new THREE.Mesh(containmentArcGeo, MAT.violetGlass);
+            arc2.rotation.y = Math.PI;
+            neuralSculpture.add(arc2);
+
+            // Observation interfaces & calibration frames positioned around the neural structure
+            for (let k = 0; k < 3; k++) {
+                const ang = (k / 3) * Math.PI * 2;
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 0.08), MAT.titanium);
+                frame.position.set(Math.cos(ang) * 5.2, (k - 1) * 0.9, Math.sin(ang) * 5.2);
+                frame.lookAt(0, 0, 0);
+                neuralSculpture.add(frame);
+            }
+
+            // Defined Synaptic Bridge (Feixes de conexão) linking Neural System to Mathematical Core
+            for (let b = 0; b < 5; b++) {
+                const offsetY = (b - 2) * 0.45;
+                const bridgeCurve = new THREE.CubicBezierCurve3(
+                    new THREE.Vector3(10.0, 0.5 + offsetY, -5.0),
+                    new THREE.Vector3(6.5, 0.2 + offsetY * 1.5, -3.2),
+                    new THREE.Vector3(3.5, -2.5 + offsetY, -1.5),
+                    new THREE.Vector3(0, -5.5, 0)
+                );
+                const beamLine = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(bridgeCurve.getPoints(36)),
+                    b === 2 ? MAT.wireAmber : MAT.wireViolet
+                );
+                neuralGroup.add(beamLine);
+            }
+
+            // =========================================================================
+            // SUBSYSTEM E (LEVEL 1): EXPERIMENTAL OBSERVATORY PLATFORM (Multi-level Base)
+            // =========================================================================
+            const obsPlatformGroup = new THREE.Group();
+            layers[1].add(obsPlatformGroup);
+
+            // Main Stepped Circular Foundation Ring
+            const baseOuterRing = new THREE.Mesh(new THREE.CylinderGeometry(16.0, 16.8, 1.2, 64), MAT.darkTitanium);
+            baseOuterRing.receiveShadow = true;
+            obsPlatformGroup.add(baseOuterRing);
+
+            // Cutout inspection deck
+            const innerDeck = new THREE.Mesh(new THREE.CylinderGeometry(11.5, 11.5, 1.6, 48), MAT.titanium);
+            innerDeck.position.y = 0.3;
+            innerDeck.receiveShadow = true;
+            obsPlatformGroup.add(innerDeck);
+
+            addMicroBolts(obsPlatformGroup, 15.2, 0.65, 36, MAT.oxidizedCopper);
+            addMicroBolts(obsPlatformGroup, 11.0, 1.15, 24, MAT.darkTitanium);
+
+            // Concentric Mechanical Rails
+            const rail1 = new THREE.Mesh(new THREE.TorusGeometry(13.6, 0.14, 12, 96), MAT.oxidizedCopper);
+            rail1.rotation.x = Math.PI / 2;
+            rail1.position.y = 0.7;
+            obsPlatformGroup.add(rail1);
+
+            const rail2 = new THREE.Mesh(new THREE.TorusGeometry(8.8, 0.12, 12, 80), MAT.mineralWhite);
+            rail2.rotation.x = Math.PI / 2;
+            rail2.position.y = 1.15;
+            obsPlatformGroup.add(rail2);
+
+            // Articulated Robotic Arms on Mechanical Rails (3 Units)
+            for (let r = 0; r < 3; r++) {
+                const ang = (r / 3) * Math.PI * 2 + 0.8;
+                const armRig = new THREE.Group();
+                armRig.position.set(Math.cos(ang) * 8.8, 1.15, Math.sin(ang) * 8.8);
+                armRig.lookAt(0, 1.15, 0);
+
+                const turret = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.75, 0.8, 12), MAT.oxidizedCopper);
+                armRig.add(turret);
+
+                const lowerBoom = new THREE.Mesh(new THREE.BoxGeometry(0.35, 2.4, 0.35), MAT.titanium);
+                lowerBoom.position.set(0, 1.2, 0.6);
+                lowerBoom.rotation.x = 0.45;
+                armRig.add(lowerBoom);
+
+                const upperBoom = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.0, 0.25), MAT.mineralWhite);
+                upperBoom.position.set(0, 2.3, 1.7);
+                upperBoom.rotation.x = 1.1;
+                armRig.add(upperBoom);
+
+                // Optical Laser Emitter Tip
+                const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.18, 0.5, 8), MAT.amberEmissive);
+                emitter.position.set(0, 2.7, 2.7);
+                emitter.rotation.x = Math.PI / 2;
+                armRig.add(emitter);
+
+                obsPlatformGroup.add(armRig);
+            }
+
+            // Optical Instruments & Telescope Collimators on Outer Deck (4 Units)
+            for (let t = 0; t < 4; t++) {
+                const ang = (t / 4) * Math.PI * 2 + 0.35;
+                const scopeGroup = new THREE.Group();
+                scopeGroup.position.set(Math.cos(ang) * 13.6, 0.75, Math.sin(ang) * 13.6);
+                scopeGroup.lookAt(0, 8.0, 0);
+
+                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 2.6, 16), MAT.darkTitanium);
+                barrel.rotation.x = Math.PI / 2;
+                scopeGroup.add(barrel);
+
+                const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.1, 16), MAT.emeraldEmissive);
+                lens.rotation.x = Math.PI / 2;
+                lens.position.z = 1.32;
+                scopeGroup.add(lens);
+
+                obsPlatformGroup.add(scopeGroup);
+            }
+
+            // Central Sample Containment Chambers (Transparent Vacuum Bells with Samples)
+            const sampleChamberGroup = new THREE.Group();
+            sampleChamberGroup.position.y = 1.1;
+            obsPlatformGroup.add(sampleChamberGroup);
+
+            for (let c = 0; c < 6; c++) {
+                const ang = (c / 6) * Math.PI * 2;
+                const cPos = new THREE.Vector3(Math.cos(ang) * 4.5, 0, Math.sin(ang) * 4.5);
+                
+                const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.95, 0.6, 16), MAT.darkTitanium);
+                ped.position.copy(cPos);
+                sampleChamberGroup.add(ped);
+
+                const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 1.8, 20), MAT.glass);
+                bell.position.copy(cPos).add(new THREE.Vector3(0, 1.2, 0));
+                sampleChamberGroup.add(bell);
+
+                // Experimental Quantum/Topological Sample inside
+                const sampleMat = c % 2 === 0 ? MAT.amberEmissive : MAT.violetEmissive;
+                const sample = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), sampleMat);
+                sample.position.copy(cPos).add(new THREE.Vector3(0, 1.2, 0));
+                sampleChamberGroup.add(sample);
+            }
+
+            // =========================================================================
+            // SUBSYSTEM F (LEVEL 5): FOUR SCIENTIFIC EVIDENCE MODULES
+            // =========================================================================
+            const evidenceGroup = new THREE.Group();
+            layers[5].add(evidenceGroup);
+
+            // 1. OBSERVATION MODULE (Front-Left: Parabolic Sensor Dish & Telemetry Array)
+            const modObservation = new THREE.Group();
+            modObservation.position.set(-11.5, 0, 9.5);
+            evidenceGroup.add(modObservation);
+
+            const obsBase = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.2, 0.9, 16), MAT.titanium);
+            modObservation.add(obsBase);
+            const obsDish = new THREE.Mesh(
+                new THREE.SphereGeometry(2.4, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.42),
+                MAT.mineralWhite
+            );
+            obsDish.rotation.x = Math.PI;
+            obsDish.position.y = 1.6;
+            modObservation.add(obsDish);
+            const obsHorn = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.25, 1.8, 8), MAT.amberEmissive);
+            obsHorn.position.y = 1.5;
+            modObservation.add(obsHorn);
+
+            // 2. THEORY MODULE (Back-Left: Interlocking Polyhedral Mathematical Predictor)
+            const modTheory = new THREE.Group();
+            modTheory.position.set(-11.5, 0, -9.5);
+            evidenceGroup.add(modTheory);
+
+            const theBase = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.6, 3.8), MAT.darkTitanium);
+            modTheory.add(theBase);
+            const theDodeca = new THREE.Mesh(new THREE.DodecahedronGeometry(1.85, 0), MAT.violetGlass);
+            theDodeca.position.y = 2.0;
+            modTheory.add(theDodeca);
+            theDodeca.add(new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.DodecahedronGeometry(1.86, 0)),
+                MAT.wireViolet
+            ));
+            const theInner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.95, 0), MAT.mineralWhite);
+            theInner.position.y = 2.0;
+            modTheory.add(theInner);
+
+            // 3. VALIDATION MODULE (Front-Right: Dual-Comparator Interferometer Bridge)
+            const modValidation = new THREE.Group();
+            modValidation.position.set(11.5, 0, 9.5);
+            evidenceGroup.add(modValidation);
+
+            const valBase = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.6, 6), MAT.titanium);
+            modValidation.add(valBase);
+            const pillarL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.8, 0.7), MAT.mineralWhite);
+            pillarL.position.set(-1.3, 1.6, 0);
+            modValidation.add(pillarL);
+            const pillarR = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.8, 0.7), MAT.mineralWhite);
+            pillarR.position.set(1.3, 1.6, 0);
+            modValidation.add(pillarR);
+            // Emerald Validation Lock Core in center
+            const valLock = new THREE.Mesh(new THREE.SphereGeometry(0.65, 20, 20), MAT.emeraldEmissive);
+            valLock.position.set(0, 1.8, 0);
+            modValidation.add(valLock);
+            const valBridge = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.6, 12), MAT.emeraldEmissive);
+            valBridge.rotation.z = Math.PI / 2;
+            valBridge.position.set(0, 1.8, 0);
+            modValidation.add(valBridge);
+
+            // 4. FALSIFICATION MODULE (Back-Right: Adversarial Stress-Test Rig with SEVERED / DISCONNECTED Structure)
+            const modFalsification = new THREE.Group();
+            modFalsification.position.set(11.5, 0, -9.5);
+            evidenceGroup.add(modFalsification);
+
+            const falBase = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.6, 3.8), MAT.darkTitanium);
+            modFalsification.add(falBase);
+
+            // Intact half of hypothesis test rig
+            const falHalfA = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 2.2), MAT.titanium);
+            falHalfA.position.set(-0.9, 1.4, 0);
+            modFalsification.add(falHalfA);
+
+            // SEVERED / DISCONNECTED half shifted & tilted away (Indicates failed hypothesis under adversarial test)
+            const falHalfB = new THREE.Group();
+            falHalfB.position.set(1.85, 2.25, 0.65);
+            falHalfB.rotation.set(0.28, -0.22, -0.35);
+            const severedBlock = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 2.0), MAT.oxidizedCopper);
+            falHalfB.add(severedBlock);
+            // Fractured conduit stubs glowing Crimson
+            const stub1 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.9, 8), MAT.crimsonEmissive);
+            stub1.rotation.z = Math.PI / 2;
+            stub1.position.set(-0.8, 0.4, 0.4);
+            falHalfB.add(stub1);
+            const stub2 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.9, 8), MAT.crimsonEmissive);
+            stub2.rotation.z = Math.PI / 2;
+            stub2.position.set(-0.8, -0.4, -0.4);
+            falHalfB.add(stub2);
+            modFalsification.add(falHalfB);
+
+            // Crimson Anomaly Breach Indicator Ring at fracture gap
+            const breachRing = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.06, 12, 32), MAT.crimsonEmissive);
+            breachRing.rotation.y = Math.PI / 2;
+            breachRing.position.set(0.35, 1.6, 0.2);
+            modFalsification.add(breachRing);
+
+            // Connect the 4 Evidence Modules toward the Center Axis
+            const modCoords = [
+                { pos: new THREE.Vector3(-11.5, 0, 9.5), mat: MAT.wireAmber, intact: true },
+                { pos: new THREE.Vector3(-11.5, 0, -9.5), mat: MAT.wireViolet, intact: true },
+                { pos: new THREE.Vector3(11.5, 0, 9.5), mat: MAT.wireEmerald, intact: true },
+                { pos: new THREE.Vector3(11.5, 0, -9.5), mat: MAT.wireCrimson, intact: false }
+            ];
+            modCoords.forEach(mc => {
+                if (mc.intact) {
+                    const pts = [mc.pos, new THREE.Vector3(mc.pos.x * 0.4, -4.0, mc.pos.z * 0.4)];
+                    evidenceGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mc.mat));
+                } else {
+                    // Interrupted / broken connection for Falsification Module
+                    const pts1 = [mc.pos, new THREE.Vector3(mc.pos.x * 0.78, -1.2, mc.pos.z * 0.78)];
+                    const pts2 = [new THREE.Vector3(mc.pos.x * 0.58, -2.6, mc.pos.z * 0.58), new THREE.Vector3(mc.pos.x * 0.4, -4.0, mc.pos.z * 0.4)];
+                    evidenceGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts1), mc.mat));
+                    evidenceGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts2), mc.mat));
+                }
+            });
+
+            // =========================================================================
+            // AXONOMETRIC RECONSTRUCTION GUIDE LINES (Requirement 5)
+            // =========================================================================
+            const guideLinesGroup = new THREE.Group();
+            masterComplex.add(guideLinesGroup);
+
+            const guidePillars = [
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(-11.5, 0, 9.5),
+                new THREE.Vector3(-11.5, 0, -9.5),
+                new THREE.Vector3(11.5, 0, 9.5),
+                new THREE.Vector3(11.5, 0, -9.5),
+                new THREE.Vector3(-9.5, 0, -6.5),
+                new THREE.Vector3(10.0, 0, -5.0)
+            ];
+
+            guidePillars.forEach(gp => {
+                const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(gp.x, -22, gp.z),
+                    new THREE.Vector3(gp.x, 26, gp.z)
+                ]);
+                const line = new THREE.Line(lineGeo, new THREE.LineDashedMaterial({
+                    color: 0x8c939e, dashSize: 0.4, gapSize: 0.4, transparent: true, opacity: 0.35
+                }));
+                line.computeLineDistances();
+                guideLinesGroup.add(line);
+            });
+
+            // =========================================================================
+            // ANIMATED DATA PULSES ALONG PROCESSING PATHS
+            // =========================================================================
+            const pulseParticles = [];
+            const pulseGeo = new THREE.SphereGeometry(0.2, 10, 10);
+            [
+                { curve: pathLocalCurve, mat: MAT.amberEmissive, speed: 0.28, parent: compGroup },
+                { curve: pathDistCurve, mat: MAT.violetEmissive, speed: 0.22, parent: compGroup },
+                { curve: pathExtCurve, mat: MAT.emeraldEmissive, speed: 0.34, parent: compGroup },
+                { curve: mathSurfaceCurve, mat: MAT.amberEmissive, speed: 0.15, parent: coreGroup }
+            ].forEach((cfg, idx) => {
+                for (let p = 0; p < 3; p++) {
+                    const mesh = new THREE.Mesh(pulseGeo, cfg.mat);
+                    cfg.parent.add(mesh);
+                    pulseParticles.push({
+                        mesh,
+                        curve: cfg.curve,
+                        t: (p / 3) + idx * 0.1,
+                        speed: cfg.speed
+                    });
+                }
+            });
+
+            // =========================================================================
+            // 3D EDITORIAL CALLOUTS & LEADER LINES SYSTEM (Requirement 7)
+            // =========================================================================
+            const calloutsData = [
+                {
+                    id: 'c-geom',
+                    title: 'GEOMETRIC STRUCTURE',
+                    sub: 'LVL 03 // TRI-TOROIDAL TOPOLOGICAL CORE',
+                    color: '#f2f0ea',
+                    layer: 3,
+                    localPos: new THREE.Vector3(0, 3.8, 0),
+                    screenOffset: { x: -135, y: -75 },
+                    desc: 'Tri-toroidal non-coplanar gimbal housing a translucent icosahedral cage and multi-shell topological manifold core.',
+                    mat: 'Ti-6Al-4V / CuO / SiO2',
+                    state: 'PHASE-LOCKED (99.4%)'
+                },
+                {
+                    id: 'c-comp',
+                    title: 'COMPUTATIONAL LAYER',
+                    sub: 'LVL 02 // 3-PATH OPTICAL SUPERCOMPUTER',
+                    color: '#f59e0b',
+                    layer: 2,
+                    localPos: new THREE.Vector3(-9.5, 1.5, -6.5),
+                    screenOffset: { x: -155, y: -25 },
+                    desc: 'Modular stacked processor tower routing Local (Amber), Distributed (Violet), and External Validation (Emerald) optical buses.',
+                    mat: 'Brushed Ti / Au-Si Photonics',
+                    state: '42.8 PFLOPS ACTIVE'
+                },
+                {
+                    id: 'c-obs',
+                    title: 'OBSERVATIONAL DATA',
+                    sub: 'LVL 05 // TELEMETRY & SENSOR MODULE 01',
+                    color: '#f59e0b',
+                    layer: 5,
+                    localPos: new THREE.Vector3(-11.5, 2.0, 9.5),
+                    screenOffset: { x: -140, y: 45 },
+                    desc: 'High-gain parabolic telemetry array capturing horizon curvature signatures and feeding raw observational streams.',
+                    mat: 'Mineral Ceramic / Cu Feed',
+                    state: 'STREAMING (SIMULATED)'
+                },
+                {
+                    id: 'c-hyp',
+                    title: 'HYPOTHESIS TESTING',
+                    sub: 'LVL 05 // MATHEMATICAL PREDICTION MODULE 02',
+                    color: '#7c3aed',
+                    layer: 5,
+                    localPos: new THREE.Vector3(-11.5, 2.4, -9.5),
+                    screenOffset: { x: -120, y: -65 },
+                    desc: 'Dodecahedral tensor synthesizer projecting candidate formalisms onto the abstract neural filtration bridge.',
+                    mat: 'Doped Quartz / Deep Violet Bus',
+                    state: 'SYNTHESIZING PRIORS'
+                },
+                {
+                    id: 'c-val',
+                    title: 'EVIDENCE VALIDATION',
+                    sub: 'LVL 05 // INTERFEROMETRIC COMPARATOR 03',
+                    color: '#10b981',
+                    layer: 5,
+                    localPos: new THREE.Vector3(11.5, 2.2, 9.5),
+                    screenOffset: { x: 135, y: 45 },
+                    desc: 'Dual-pillar interferometer verifying agreement between low-energy geodesic trajectories and empirical horizon bounds.',
+                    mat: 'Mineral White / Emerald Core',
+                    state: 'CONVERGENCE CONFIRMED'
+                },
+                {
+                    id: 'c-inc',
+                    title: 'MODEL INCOMPATIBILITY',
+                    sub: 'LVL 05 // ADVERSARIAL FALSIFICATION MODULE 04',
+                    color: '#e11d48',
+                    layer: 5,
+                    localPos: new THREE.Vector3(11.5, 2.2, -9.5),
+                    screenOffset: { x: 145, y: -55 },
+                    desc: 'Adversarial stress-test rig showing structural disconnection where Candidate Hypothesis H4 fails high-curvature boundary tests.',
+                    mat: 'Severed CuO / Crimson Alert',
+                    state: 'HYPOTHESIS FALSIFIED'
+                },
+                {
+                    id: 'c-unc',
+                    title: 'UNCERTAINTY REGION',
+                    sub: 'LVL 03 // METRIC HORIZON TRUNCATION',
+                    color: '#e11d48',
+                    layer: 3,
+                    localPos: new THREE.Vector3(3.2, -3.8, 3.2),
+                    screenOffset: { x: 140, y: 70 },
+                    desc: 'Non-Euclidean gravity well boundary where classical smooth manifold equations diverge into interrupted trajectories.',
+                    mat: 'Deformable Spacetime Mesh',
+                    state: 'ASYMPTOTIC DIVERGENCE'
+                }
+            ];
+
+            const calloutsContainer = document.getElementById('callouts-container');
+            const leaderSvg = document.getElementById('leader-svg');
+
+            calloutsData.forEach(cd => {
+                // Create DOM Callout Box
+                const el = document.createElement('div');
+                el.className = 'callout-node';
+                el.id = cd.id;
+                el.innerHTML = `
+                    <div class="callout-box" style="border-left: 3px solid ${cd.color};">
+                        <div class="font-bold tracking-[0.12em] text-[#f2f0ea]">${cd.title}</div>
+                        <div class="text-[8px] text-[#8c939e] tracking-[0.08em]">${cd.sub}</div>
+                    </div>
+                `;
+                el.addEventListener('click', () => {
+                    selectSubsystem(cd);
+                });
+                calloutsContainer.appendChild(el);
+                cd.domEl = el;
+
+                // Create SVG Leader Line + Anchor Dot
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', cd.color);
+                path.setAttribute('stroke-width', '1');
+                path.setAttribute('stroke-opacity', '0.75');
+                leaderSvg.appendChild(path);
+                cd.svgLine = path;
+
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('r', '3');
+                dot.setAttribute('fill', cd.color);
+                leaderSvg.appendChild(dot);
+                cd.svgDot = dot;
+            });
+
+            function selectSubsystem(cd) {
+                document.getElementById('insp-title').textContent = cd.title;
+                document.getElementById('insp-desc').textContent = cd.desc;
+                document.getElementById('insp-mat').textContent = cd.mat;
+                const stateEl = document.getElementById('insp-state');
+                stateEl.textContent = cd.state;
+                stateEl.style.color = cd.color;
+            }
+
+            // =========================================================================
+            // INTERACTIVE CONTROLS & LAYER EXPLOSION LOGIC
+            // =========================================================================
+            let explosionFactor = 0.35; // Initial 35% exploded state so layers are legible immediately
+            let targetExplosion = 0.35;
+            let autoRotate = true;
+            const activeLayers = { 1: true, 2: true, 3: true, 4: true, 5: true };
+
+            const slider = document.getElementById('explosion-slider');
+            const explosionVal = document.getElementById('explosion-val');
+
+            slider.addEventListener('input', (e) => {
+                targetExplosion = parseFloat(e.target.value) / 100;
+                explosionVal.textContent = `${e.target.value}%`;
+            });
+
+            // Layer toggle buttons
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const lvl = parseInt(btn.getAttribute('data-layer'));
+                    activeLayers[lvl] = !activeLayers[lvl];
+                    layers[lvl].visible = activeLayers[lvl];
+                    btn.classList.toggle('active', activeLayers[lvl]);
+                    btn.style.opacity = activeLayers[lvl] ? '1' : '0.4';
+                });
+            });
+
+            document.getElementById('btn-reset-layers').addEventListener('click', () => {
+                Object.keys(activeLayers).forEach(k => {
+                    activeLayers[k] = true;
+                    layers[k].visible = true;
+                });
+                document.querySelectorAll('.layer-btn').forEach(btn => {
+                    btn.classList.add('active');
+                    btn.style.opacity = '1';
+                });
+            });
+
+            // Camera Presets
+            let camTargetPos = null;
+            let lookAtTarget = new THREE.Vector3(0, 1, 0);
+
+            document.getElementById('btn-cam-iso').addEventListener('click', () => {
+                camTargetPos = new THREE.Vector3(42, 30, 46);
+                lookAtTarget.set(0, 1, 0);
+            });
+            document.getElementById('btn-cam-top').addEventListener('click', () => {
+                camTargetPos = new THREE.Vector3(0, 68, 0.1);
+                lookAtTarget.set(0, 0, 0);
+            });
+            document.getElementById('btn-cam-core').addEventListener('click', () => {
+                camTargetPos = new THREE.Vector3(16, 12, 18);
+                lookAtTarget.set(0, 2, 0);
+            });
+
+            const btnRot = document.getElementById('btn-toggle-rot');
+            btnRot.addEventListener('click', () => {
+                autoRotate = !autoRotate;
+                btnRot.textContent = `ORBIT: ${autoRotate ? 'ON' : 'OFF'}`;
+                btnRot.className = autoRotate
+                    ? 'px-2.5 py-1.5 text-[10px] tracking-wider border border-[#10b981]/50 text-[#10b981] bg-[#10b981]/10 transition'
+                    : 'px-2.5 py-1.5 text-[10px] tracking-wider border border-[#8c939e]/30 text-[#8c939e] transition';
+            });
+
+            // Evidence Modules Bottom Quick Focus
+            const focusMap = {
+                'mod-obs': calloutsData[2],
+                'mod-the': calloutsData[3],
+                'mod-val': calloutsData[4],
+                'mod-fal': calloutsData[5]
+            };
+            document.querySelectorAll('.focus-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.getAttribute('data-focus');
+                    if (focusMap[key]) selectSubsystem(focusMap[key]);
+                });
+            });
+
+            // Cancel camera preset interpolation if user grabs canvas
+            renderer.domElement.addEventListener('pointerdown', () => {
+                camTargetPos = null;
+                if (cineState.active) stopCinematicSequence();
+            });
+
+            // =========================================================================
+            // ENTERGALACTIC VISUAL STYLIZATION: INK-STROKE EDGES & COSMIC NEBULA STREAKS
+            // =========================================================================
+            const comicInkGroup = new THREE.Group();
+            comicInkGroup.visible = false;
+            masterComplex.add(comicInkGroup);
+
+            // Stylized graphic sketch rings & dynamic cel-shaded contour lines around core & layers
+            const inkMaterials = [
+                new THREE.LineBasicMaterial({ color: 0xf2f0ea, transparent: true, opacity: 0.9 }),
+                new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.85 }),
+                new THREE.LineBasicMaterial({ color: 0xe11d48, transparent: true, opacity: 0.85 }),
+                new THREE.LineBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.85 })
+            ];
+
+            // Create stylized comic burst / speed-contour rings around the 5 strata
+            for (let s = 0; s < 28; s++) {
+                const rad = 3.5 + (s % 7) * 2.6;
+                const yOff = (s - 14) * 1.3;
+                const arcPts = [];
+                const startA = (s * 1.7) % (Math.PI * 2);
+                const arcLen = 0.6 + (s % 3) * 0.55;
+                for (let j = 0; j <= 24; j++) {
+                    const a = startA + (j / 24) * arcLen;
+                    arcPts.push(new THREE.Vector3(Math.cos(a) * rad, yOff, Math.sin(a) * rad));
+                }
+                const strokeLine = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(arcPts),
+                    inkMaterials[s % inkMaterials.length]
+                );
+                comicInkGroup.add(strokeLine);
+            }
+
+            // Cosmic Entergalactic Starfield & Graphic Streaks in deep background
+            const cosmicStreaksGroup = new THREE.Group();
+            scene.add(cosmicStreaksGroup);
+            const streakCount = 160;
+            for (let i = 0; i < streakCount; i++) {
+                const r = 38 + Math.random() * 55;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = (Math.random() - 0.5) * Math.PI * 0.85;
+                const x = r * Math.cos(phi) * Math.cos(theta);
+                const y = r * Math.sin(phi);
+                const z = r * Math.cos(phi) * Math.sin(theta);
+
+                const len = 1.2 + Math.random() * 3.5;
+                const p1 = new THREE.Vector3(x, y, z);
+                const p2 = new THREE.Vector3(x, y + len, z);
+                const mat = inkMaterials[i % inkMaterials.length];
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1, p2]), mat);
+                cosmicStreaksGroup.add(line);
+            }
+            cosmicStreaksGroup.visible = false;
+
+            // =========================================================================
+            // PROCEDURAL ENTERGALACTIC SYNTHESIZER (WEB AUDIO API)
+            // =========================================================================
+            let audioCtx = null;
+            let audioEnabled = true;
+            let activeOscillators = [];
+            let lastChapterTrigger = -1;
+
+            function initCineAudio() {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        audioCtx = new AudioContextClass();
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+
+            // Trigger deep warm analog synth chord + cosmic sub-drop on each 5s layer transition
+            function triggerEntergalacticChord(chapterIdx) {
+                if (!audioEnabled || !audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                // Lush minor-9th / cosmic synth progressions per layer
+                const chordMap = [
+                    [55.0, 110.0, 130.81, 164.81, 196.0, 246.94], // Act I: A minor 9 (Deep Infrastructure)
+                    [65.41, 130.81, 164.81, 196.0, 246.94, 293.66], // Act II: C maj 9 (Computational Pulse)
+                    [73.42, 146.83, 174.61, 220.0, 261.63, 329.63], // Act III: D min 9 (Geometry & Spacetime Core)
+                    [61.74, 123.47, 155.56, 185.0, 246.94, 311.13], // Act IV: B half-dim / altered (Neural Cognition)
+                    [58.27, 116.54, 146.83, 174.61, 220.0, 261.63], // Act V: Bb maj 9 (Evidence & Falsification)
+                    [55.0, 110.0, 164.81, 220.0, 277.18, 329.63]    // Act VI: A major cosmic resolution (Full Nexus)
+                ];
+                const freqs = chordMap[chapterIdx % chordMap.length];
+
+                // Cosmic Sub-Bass Zoom Whoosh
+                const subOsc = audioCtx.createOscillator();
+                const subGain = audioCtx.createGain();
+                subOsc.type = 'sine';
+                subOsc.frequency.setValueAtTime(140, now);
+                subOsc.frequency.exponentialRampToValueAtTime(42, now + 0.85);
+                subGain.gain.setValueAtTime(0.22, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+                subOsc.connect(subGain);
+                subGain.connect(audioCtx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 1.45);
+
+                // Warm Detuned Sawtooth Pad
+                freqs.forEach((f, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = idx === 0 ? 'triangle' : 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now);
+                    osc.detune.setValueAtTime((idx % 2 === 0 ? 1 : -1) * 8, now);
+
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(240, now);
+                    filter.frequency.exponentialRampToValueAtTime(1850, now + 1.2);
+                    filter.frequency.exponentialRampToValueAtTime(420, now + 4.8);
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime(idx === 0 ? 0.08 : 0.035, now + 0.45);
+                    gain.gain.exponentialRampToValueAtTime(0.0008, now + 4.9);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 5.0);
+                });
+            }
+
+            // =========================================================================
+            // 30-SECOND CINEMATIC LAYER-BY-LAYER ZOOM CHOREOGRAPHY
+            // =========================================================================
+            const cineState = {
+                active: false,
+                time: 0,
+                duration: 30.0,
+                steppedTimer: 0
+            };
+
+            // 6 chapters x 5.0 seconds = 30.0 seconds total
+            // Note: Layer Y positions dynamically shift with explosionFactor, so camera tracks world Y!
+            const cineKeyframes = [
+                {
+                    // 0.0s - 5.0s: ACT I — LEVEL 01: INFRASTRUCTURE & OBSERVATORY RIGS
+                    tStart: 0.0, tEnd: 5.0,
+                    actCode: 'ACT I // LVL 01: INFRASTRUCTURE',
+                    tag: 'LAYER 01 // ELEVATION -16.0M // OBSERVATORY RIGS',
+                    title: 'EXPERIMENTAL OBSERVATORY BASE',
+                    sub: 'Dynamic macro zoom across concentric copper rails, articulated laser arms & quantum vacuum bells.',
+                    explosionStart: 0.15, explosionEnd: 0.45,
+                    fovStart: 54, fovEnd: 30,
+                    camStart: new THREE.Vector3(36, -6, 38),
+                    camEnd: new THREE.Vector3(13, -11.5, 14),
+                    targetStart: new THREE.Vector3(0, -13, 0),
+                    targetEnd: new THREE.Vector3(3, -14.0, 3),
+                    calloutIdx: 2
+                },
+                {
+                    // 5.0s - 10.0s: ACT II — LEVEL 02: COMPUTATIONAL ARCHITECTURE
+                    tStart: 5.0, tEnd: 10.0,
+                    actCode: 'ACT II // LVL 02: COMPUTATION',
+                    tag: 'LAYER 02 // ELEVATION -8.5M // 3-PATH SUPERCOMPUTER',
+                    title: 'OPTICAL COMPUTATIONAL TOWER',
+                    sub: 'Snap-zoom into stacked heatsink plates, hot-swap processor bays & luminous Amber/Violet/Emerald buses.',
+                    explosionStart: 0.45, explosionEnd: 0.65,
+                    fovStart: 48, fovEnd: 26,
+                    camStart: new THREE.Vector3(-24, -4, 6),
+                    camEnd: new THREE.Vector3(-15.5, -6.2, -12.5),
+                    targetStart: new THREE.Vector3(-9.5, -7.5, -6.5),
+                    targetEnd: new THREE.Vector3(-8.5, -7.8, -5.5),
+                    calloutIdx: 1
+                },
+                {
+                    // 10.0s - 15.0s: ACT III — LEVEL 03: FUNDAMENTAL GEOMETRY CORE & SPACETIME
+                    tStart: 10.0, tEnd: 15.0,
+                    actCode: 'ACT III // LVL 03: CORE & SPACETIME',
+                    tag: 'LAYER 03 // ELEVATION 0.0M // NON-EUCLIDEAN METRIC WELL',
+                    title: 'FUNDAMENTAL GEOMETRY & SPACETIME',
+                    sub: 'Diving through the deformed gravity funnel into the tri-toroidal gimbal, icosahedron & topological knot.',
+                    explosionStart: 0.65, explosionEnd: 0.40,
+                    fovStart: 52, fovEnd: 24,
+                    camStart: new THREE.Vector3(0, 12, 24),
+                    camEnd: new THREE.Vector3(6.2, 3.2, 7.2),
+                    targetStart: new THREE.Vector3(0, 0.5, 0),
+                    targetEnd: new THREE.Vector3(0, 2.0, 0),
+                    calloutIdx: 0
+                },
+                {
+                    // 15.0s - 20.0s: ACT IV — LEVEL 04: OBSERVATION & ABSTRACT NEURAL SYSTEM
+                    tStart: 15.0, tEnd: 20.0,
+                    actCode: 'ACT IV // LVL 04: COGNITION',
+                    tag: 'LAYER 04 // ELEVATION +10.5M // SYNAPTIC FILTRATION',
+                    title: 'ABSTRACT NEURAL ARCHITECTURE',
+                    sub: 'Sweeping across organic translucent fibers, golden-angle cognitive nodes & violet synaptic core bridges.',
+                    explosionStart: 0.40, explosionEnd: 0.75,
+                    fovStart: 46, fovEnd: 27,
+                    camStart: new THREE.Vector3(24, 15, 8),
+                    camEnd: new THREE.Vector3(16.5, 13.5, -11.0),
+                    targetStart: new THREE.Vector3(8.0, 11.5, -4.0),
+                    targetEnd: new THREE.Vector3(10.0, 12.8, -5.0),
+                    calloutIdx: 6
+                },
+                {
+                    // 20.0s - 25.0s: ACT V — LEVEL 05: EVIDENCE & ADVERSARIAL FALSIFICATION
+                    tStart: 20.0, tEnd: 25.0,
+                    actCode: 'ACT V // LVL 05: FALSIFICATION',
+                    tag: 'LAYER 05 // ELEVATION +18.0M // HYPOTHESIS STRESS-TEST',
+                    title: 'EVIDENCE & MODEL FALSIFICATION',
+                    sub: 'High-altitude pan from Theory & Validation comparators to the severed Crimson Falsification anomaly rig.',
+                    explosionStart: 0.75, explosionEnd: 1.0,
+                    fovStart: 50, fovEnd: 25,
+                    camStart: new THREE.Vector3(-18, 28, 18),
+                    camEnd: new THREE.Vector3(18.5, 26.5, -16.5),
+                    targetStart: new THREE.Vector3(0, 22.0, 0),
+                    targetEnd: new THREE.Vector3(11.5, 24.5, -9.5),
+                    calloutIdx: 5
+                },
+                {
+                    // 25.0s - 30.0s: ACT VI — GRAND AXONOMETRIC RECONSTRUCTION FINALE
+                    tStart: 25.0, tEnd: 30.0,
+                    actCode: 'ACT VI // NEXUS CONVERGENCE',
+                    tag: 'FULL SYSTEM // AXONOMETRIC RECONSTRUCTION LOCK',
+                    title: 'TAMESIS NEXUS — THE ARCHITECTURE OF REALITY',
+                    sub: 'Pulling back as all five strata compress along guide axes into a unified orbital deep-theory monolith.',
+                    explosionStart: 1.0, explosionEnd: 0.35,
+                    fovStart: 26, fovEnd: 34,
+                    camStart: new THREE.Vector3(22, 32, -26),
+                    camEnd: new THREE.Vector3(42, 30, 46),
+                    targetStart: new THREE.Vector3(0, 8, 0),
+                    targetEnd: new THREE.Vector3(0, 1, 0),
+                    calloutIdx: 0
+                }
+            ];
+
+            const speedlinesEl = document.getElementById('speedlines-overlay');
+            const cineTimecodeEl = document.getElementById('cine-timecode');
+            const cineActCodeEl = document.getElementById('cine-act-code');
+            const cineProgressBar = document.getElementById('cine-progress-bar');
+            const cineCardTag = document.getElementById('cine-card-tag');
+            const cineCardTitle = document.getElementById('cine-card-title');
+            const cineCardSub = document.getElementById('cine-card-sub');
+            const cineTitleCard = document.getElementById('cine-title-card');
+
+            function startCinematicSequence() {
+                initCineAudio();
+                cineState.active = true;
+                cineState.time = 0;
+                lastChapterTrigger = -1;
+
+                // Ensure all 5 layers are visible for the tour
+                Object.keys(activeLayers).forEach(k => {
+                    activeLayers[k] = true;
+                    layers[k].visible = true;
+                });
+                document.querySelectorAll('.layer-btn').forEach(btn => {
+                    btn.classList.add('active');
+                    btn.style.opacity = '1';
+                });
+
+                document.body.classList.add('cine-active');
+                comicInkGroup.visible = true;
+                cosmicStreaksGroup.visible = true;
+                controls.enabled = false;
+            }
+
+            function stopCinematicSequence() {
+                cineState.active = false;
+                document.body.classList.remove('cine-active');
+                comicInkGroup.visible = false;
+                cosmicStreaksGroup.visible = false;
+                speedlinesEl.style.opacity = '0';
+                camera.fov = 34;
+                camera.updateProjectionMatrix();
+                controls.enabled = true;
+            }
+
+            document.getElementById('btn-play-30s').addEventListener('click', () => {
+                if (cineState.active) {
+                    stopCinematicSequence();
+                } else {
+                    startCinematicSequence();
+                }
+            });
+
+            document.getElementById('btn-cine-stop').addEventListener('click', stopCinematicSequence);
+
+            const btnAudio = document.getElementById('btn-cine-audio');
+            btnAudio.addEventListener('click', () => {
+                audioEnabled = !audioEnabled;
+                btnAudio.textContent = `♫ SYNTH AUDIO: ${audioEnabled ? 'ON' : 'OFF'}`;
+                btnAudio.style.opacity = audioEnabled ? '1' : '0.5';
+            });
+
+            // Timeline Scrubber Interaction
+            const cineScrubber = document.getElementById('cine-scrubber');
+            cineScrubber.addEventListener('click', (e) => {
+                if (!cineState.active) return;
+                const rect = cineScrubber.getBoundingClientRect();
+                const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                cineState.time = ratio * cineState.duration;
+                lastChapterTrigger = -1;
+            });
+
+            // Smooth cubic-bezier style easing with energetic Entergalactic snap at chapter starts
+            function easeInOutExpoPunch(x) {
+                return x < 0.5
+                    ? 4 * x * x * x
+                    : 1 - Math.pow(-2 * x + 2, 3) / 2;
+            }
+
+            // =========================================================================
+            // MAIN RENDER & TELEMETRY PROJECTION LOOP
+            // =========================================================================
+            const clock = new THREE.Clock();
+            const tempVec = new THREE.Vector3();
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const dt = Math.min(clock.getDelta(), 0.1);
+                const elapsed = clock.getElapsedTime();
+
+                // =====================================================================
+                // 30S ENTERGALACTIC CINEMATIC DIRECTOR UPDATE
+                // =====================================================================
+                if (cineState.active) {
+                    cineState.time += dt;
+                    if (cineState.time >= cineState.duration) {
+                        stopCinematicSequence();
+                    } else {
+                        const t = cineState.time;
+                        const progressPct = (t / cineState.duration) * 100;
+                        cineProgressBar.style.width = `${progressPct}%`;
+                        cineTimecodeEl.textContent = `00:${t < 10 ? '0' : ''}${t.toFixed(2)} / 00:30.00`;
+
+                        // Find current 5-second Act
+                        const chapterIdx = Math.min(5, Math.floor(t / 5.0));
+                        const kf = cineKeyframes[chapterIdx];
+                        const localT = (t - kf.tStart) / (kf.tEnd - kf.tStart); // 0.0 -> 1.0 within chapter
+                        const easedT = easeInOutExpoPunch(localT);
+
+                        // Trigger audio chord & UI card update on new chapter
+                        if (chapterIdx !== lastChapterTrigger) {
+                            lastChapterTrigger = chapterIdx;
+                            triggerEntergalacticChord(chapterIdx);
+                            cineActCodeEl.textContent = kf.actCode;
+                            cineCardTag.textContent = kf.tag;
+                            cineCardTitle.textContent = kf.title;
+                            cineCardSub.textContent = kf.sub;
+                            selectSubsystem(calloutsData[kf.calloutIdx]);
+
+                            // Graphic card entrance pop
+                            cineTitleCard.style.transform = 'translateX(-25px) scale(0.95)';
+                            setTimeout(() => {
+                                cineTitleCard.style.transform = 'translateX(0px) scale(1)';
+                            }, 60);
+                        }
+
+                        // Speedlines burst during the first 0.9s of each zoom transition
+                        if (localT < 0.22) {
+                            speedlinesEl.style.opacity = ((1 - localT / 0.22) * 0.95).toFixed(2);
+                        } else {
+                            speedlinesEl.style.opacity = '0.12';
+                        }
+
+                        // Interpolate Axonometric Layer Explosion
+                        targetExplosion = THREE.MathUtils.lerp(kf.explosionStart, kf.explosionEnd, easedT);
+                        slider.value = Math.round(targetExplosion * 100);
+                        explosionVal.textContent = `${slider.value}%`;
+
+                        // Dynamic FOV Warp (Wide warp at start of cut -> telephoto zoom focus)
+                        const warpBounce = Math.sin(localT * Math.PI) * 6.5;
+                        camera.fov = THREE.MathUtils.lerp(kf.fovStart, kf.fovEnd, easedT) + (localT < 0.35 ? warpBounce : 0);
+                        camera.updateProjectionMatrix();
+
+                        // Rotate master complex smoothly so camera sweeps around structure
+                        const rotAngle = elapsed * 0.22;
+                        const curCam = new THREE.Vector3().lerpVectors(kf.camStart, kf.camEnd, easedT);
+                        curCam.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotAngle * 0.35);
+                        camera.position.copy(curCam);
+
+                        const curTarget = new THREE.Vector3().lerpVectors(kf.targetStart, kf.targetEnd, easedT);
+                        controls.target.copy(curTarget);
+                        camera.lookAt(controls.target);
+
+                        // Entergalactic "On-Twos" (12 FPS) stepped animation cadence for comic strokes & rings
+                        cineState.steppedTimer += dt;
+                        if (cineState.steppedTimer >= 1 / 12) {
+                            cineState.steppedTimer = 0;
+                            comicInkGroup.rotation.y += 0.06;
+                            comicInkGroup.position.y = (Math.random() - 0.5) * 0.18;
+                            cosmicStreaksGroup.rotation.y -= 0.015;
+                            coreLight.intensity = 2.4 + Math.random() * 1.4;
+                        }
+                    }
+                }
+
+                // Smoothly interpolate layer explosion
+                explosionFactor += (targetExplosion - explosionFactor) * 0.08;
+                Object.keys(layers).forEach(k => {
+                    const cfg = layerConfig[k];
+                    layers[k].position.y = cfg.baseY + cfg.explodeOffset * explosionFactor;
+                });
+
+                // Subtle, physically coherent animations
+                if (autoRotate) {
+                    masterComplex.rotation.y += dt * 0.09;
+                }
+
+                // Counter-rotating gimbal rings & mathematical knot
+                ring1.rotation.z += dt * 0.18;
+                ring2.rotation.x -= dt * 0.24;
+                ring3.rotation.y += dt * 0.32;
+                topoKnot.rotation.x += dt * 0.4;
+                topoKnot.rotation.y += dt * 0.25;
+                orbitalsGroup.rotation.y -= dt * 0.15;
+
+                // Subtle oscillation of severed Falsification piece
+                falHalfB.position.y = 2.25 + Math.sin(elapsed * 2.2) * 0.12;
+
+                // Propagate data pulses along processing tubes
+                pulseParticles.forEach(p => {
+                    p.t = (p.t + dt * p.speed) % 1.0;
+                    const pt = p.curve.getPointAt(p.t);
+                    p.mesh.position.copy(pt);
+                });
+
+                // Smooth camera transition if preset clicked
+                if (camTargetPos) {
+                    camera.position.lerp(camTargetPos, 0.06);
+                    controls.target.lerp(lookAtTarget, 0.06);
+                    if (camera.position.distanceTo(camTargetPos) < 0.25) {
+                        camTargetPos = null;
+                    }
+                }
+
+                controls.update();
+                renderer.render(scene, camera);
+
+                // Update 2D Projected Editorial Callouts & Leader Lines
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                calloutsData.forEach(cd => {
+                    if (!activeLayers[cd.layer]) {
+                        cd.domEl.style.opacity = '0';
+                        cd.domEl.style.pointerEvents = 'none';
+                        cd.svgLine.setAttribute('opacity', '0');
+                        cd.svgDot.setAttribute('opacity', '0');
+                        return;
+                    }
+
+                    // Compute world position of anchor inside its exploded & rotated layer
+                    tempVec.copy(cd.localPos);
+                    layers[cd.layer].localToWorld(tempVec);
+                    tempVec.project(camera);
+
+                    // Check if in front of camera
+                    if (tempVec.z > 1.0) {
+                        cd.domEl.style.opacity = '0';
+                        cd.svgLine.setAttribute('opacity', '0');
+                        cd.svgDot.setAttribute('opacity', '0');
+                        return;
+                    }
+
+                    const anchorX = (tempVec.x * 0.5 + 0.5) * width;
+                    const anchorY = (-(tempVec.y * 0.5) + 0.5) * height;
+
+                    // Keep labels clamped inside safe central margin
+                    const labelX = Math.max(310, Math.min(width - 340, anchorX + cd.screenOffset.x));
+                    const labelY = Math.max(95, Math.min(height - 95, anchorY + cd.screenOffset.y));
+
+                    cd.domEl.style.opacity = '1';
+                    cd.domEl.style.pointerEvents = 'auto';
+                    cd.domEl.style.left = `${labelX}px`;
+                    cd.domEl.style.top = `${labelY}px`;
+
+                    // Orthopedic elbow leader line (Anchor -> Elbow -> Callout Box)
+                    const elbowX = anchorX + (labelX - anchorX) * 0.45;
+                    const elbowY = labelY;
+
+                    cd.svgLine.setAttribute('opacity', '1');
+                    cd.svgLine.setAttribute('points', `${anchorX},${anchorY} ${elbowX},${elbowY} ${labelX},${labelY}`);
+                    cd.svgDot.setAttribute('opacity', '1');
+                    cd.svgDot.setAttribute('cx', anchorX);
+                    cd.svgDot.setAttribute('cy', anchorY);
+                });
+            }
+
+            animate();
+
+            // Responsive Resize Handling
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+        })();
+    </script>
+</body>
+</html>
