@@ -1,0 +1,13 @@
+{
+  "name": "tamesis-nexus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Atlas científico 3D interativo e conceitual, com recursos locais.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "check": "node --experimental-vm-modules scripts/check.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
